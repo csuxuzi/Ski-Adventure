@@ -12,7 +12,7 @@ public:
 
     // 设置当鼠标悬停时是否改变大小
     void setHoverEnabled(bool enabled);
-
+    void updateIcon(const QPixmap &pixmap);
 protected:
     void enterEvent(QEnterEvent *event) override;
     void leaveEvent(QEvent *event) override;

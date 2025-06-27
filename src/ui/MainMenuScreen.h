@@ -2,7 +2,7 @@
 #define MAINMENUSCREEN_H
 
 #include <QWidget>
-
+#include <QResizeEvent>
 class QGraphicsView;
 class QGraphicsScene;
 class QPropertyAnimation;
@@ -24,6 +24,7 @@ private slots:
     void showHelp();
     void showRecords();
     void showHighscore();
+    //void showSettingsDialog();
 
 private:
     void setupScene();
@@ -39,9 +40,16 @@ private:
 
     // 抽屉菜单相关
     QWidget* m_drawerContainer;
-    ImageButton* m_drawerButton;
+    ImageButton* m_toggleButton;
+    ImageButton* m_helpButton;
+    ImageButton* m_recordsButton;
+    ImageButton* m_settingsButton;
+    ImageButton* m_highscoreButton;
     QPropertyAnimation* m_drawerAnimation;
     bool m_isDrawerOpen = false;
+protected:
+    void resizeEvent(QResizeEvent *event) override;
 };
+
 
 #endif // MAINMENUSCREEN_H

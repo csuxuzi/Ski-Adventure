@@ -6,7 +6,7 @@
 class QStackedWidget;
 class MainMenuScreen;
 class SettingsDialog;
-
+class GameScreen;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -27,6 +27,7 @@ private:
     QStackedWidget* m_stackedWidget;
     MainMenuScreen* m_mainMenuScreen;
     SettingsDialog* m_settingsDialog;
+    GameScreen* m_gameScreen;
 };
 
 #endif // MAINWINDOW_H

@@ -20,6 +20,10 @@ add_executable(SkiAdventure
     src/main.cpp
     src/ui/ImageButton.h src/ui/ImageButton.cpp
     src/ui/placeholderdialog.h src/ui/placeholderdialog.cpp
+    src/ui/GameScreen.h src/ui/GameScreen.cpp
+    src/game/GameObject.h src/game/GameObject.cpp
+
+    src/game/player.h src/game/player.cpp
 )
 
 
@@ -32,6 +36,9 @@ target_sources(SkiAdventure PRIVATE
     src/ui/MainMenuScreen.h
     src/ui/SettingsDialog.h
     src/audio/AudioManager.h
+    src/game/GameObject.h
+    src/ui/GameScreen.h
+    src/game/Player.h
     src/ui/ImageButton.h           # <-- 【新增行】
     src/ui/PlaceholderDialog.h     # <-- 【新增行】
 
@@ -40,6 +47,9 @@ target_sources(SkiAdventure PRIVATE
     src/ui/MainMenuScreen.cpp
     src/ui/SettingsDialog.cpp
     src/audio/AudioManager.cpp
+    src/game/GameObject.cpp
+    src/ui/GameScreen.cpp
+    src/game/Player.cpp
     src/ui/ImageButton.cpp         # <-- 【新增行】
     src/ui/PlaceholderDialog.cpp   # <-- 【新增行】
 
