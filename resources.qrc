@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/assets/images">
+        <file>main_menu_bg.png</file>
+        <file>splash_screen.png</file>
+        <file>btn_help.png</file>
+        <file>btn_highscore.png</file>
+        <file>btn_records.png</file>
+        <file>btn_settings.png</file>
+        <file>btn_start.png</file>
+        <file>drawer_arrow_close.png</file>
+        <file>drawer_arrow_open.png</file>
+        <file>house.png</file>
+    </qresource>
+    <qresource prefix="/assets/audio/music">
+        <file>main_menu.mp3</file>
+    </qresource>
+</RCC>
