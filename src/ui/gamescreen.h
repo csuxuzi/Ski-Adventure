@@ -45,7 +45,7 @@ private:
 
     // --- 新增：世界滚动偏移量 ---
     qreal m_worldOffset;      // 代表摄像机的位置或者说世界滚动的距离
-
+    qreal m_verticalOffset;   // <-- 【新增】垂直偏移量
 
     // 雪地相关
     QList<QPointF> m_snowPoints;

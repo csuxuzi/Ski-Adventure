@@ -18,6 +18,7 @@
         <file>stone_small1.png</file>
         <file>stone_shattered.png</file>
         <file>house_door.png</file>
+        <file>house_shattered.png</file>
     </qresource>
     <qresource prefix="/assets/audio/music">
         <file>main_menu.mp3</file>

@@ -1,9 +1,16 @@
 #include "game/House.h"
 #include <QPainter>
 #include <QDebug>
+#include <QTimer> // <-- 【新增】包含 QTimer 头文件
+// --- 【新增】定义破碎动画的常量 ---
+const int SHATTER_FADE_STEP_DURATION = 50; // 淡出效果每步之间的时间间隔 (毫秒)
+const qreal SHATTER_OPACITY_STEP = 0.05;   // 每次降低多少透明度
 
 House::House(QObject *parent)
-    : Obstacle(parent), m_doorState(Closed)
+    : Obstacle(parent), m_doorState(Closed),
+    // --- 【新增】初始化破碎相关的成员变量 ---
+    m_shatterState(Intact),
+    m_shatterOpacity(1.0)
 {
     // 1. 加载房屋主体图片
     if (!m_originalPixmap.load(":/assets/images/house.png")) { // 请替换为您的房屋图片路径
@@ -14,7 +21,10 @@ House::House(QObject *parent)
     if (!m_doorPixmap.load(":/assets/images/house_door.png")) { // 请替换为您的门图片路径
         qWarning() << "Failed to load house door image!";
     }
-
+    // --- 【新增】加载破碎效果的贴图 ---
+    if (!m_shatteredPixmap.load(":/assets/images/house_shattered.png")) { // 复用石头的破碎图
+        qWarning() << "Failed to load house shattered image!";
+    }
 
 
     // 3. 【核心】定义屋顶的碰撞路径
@@ -45,12 +55,71 @@ House::House(QObject *parent)
     QPointF topPeak(width*0.02, -height*0.6328);
     QPointF rightCorner(width*0.1276, -height * 0.4218);
 
+
+    // --- 【修改】存储屋顶最高点的局部坐标 ---
+    m_roofPeak = topPeak;
+    m_roofLeftCorner = leftCorner;
+    m_roofRightCorner = rightCorner;
     m_roofPath.moveTo(leftCorner);
     m_roofPath.lineTo(topPeak);
     m_roofPath.lineTo(rightCorner);
 
     // 3. 最后再调用setScale，它会同时缩放视觉图像和矩形碰撞体
     setScale(0.6);
+
+    // --- 【新增】初始化并连接破碎计时器 ---
+    m_shatterTimer = new QTimer(this);
+    connect(m_shatterTimer, &QTimer::timeout, this, &House::updateShatterEffect);
+
+}
+
+// --- 【新增】实现 shatter 方法 ---
+void House::shatter(const QPointF& point)
+{
+    // 只有完好的房子才能被破碎
+    if (m_shatterState == Intact) {
+        m_shatterState = Shattering;     // 状态切换为“正在破碎”
+        m_shatterPosition = point;       // 记录碰撞点
+        m_shatterOpacity = 1.0;          // 重置透明度为完全不透明
+        m_shatterTimer->start(SHATTER_FADE_STEP_DURATION); // 启动淡出动画
+    }
+}
+// --- 【新增】实现获取屋顶左右底角世界坐标的函数 ---
+QPointF House::getRoofLeftCornerWorldPosition() const
+{
+    QTransform transform;
+    transform.translate(m_position.x(), m_position.y());
+    transform.scale(m_scale, m_scale);
+    return transform.map(m_roofLeftCorner);
+}
+
+QPointF House::getRoofRightCornerWorldPosition() const
+{
+    QTransform transform;
+    transform.translate(m_position.x(), m_position.y());
+    transform.scale(m_scale, m_scale);
+    return transform.map(m_roofRightCorner);
+}
+// --- 【新增】实现更新破碎效果的槽函数 ---
+void House::updateShatterEffect()
+{
+    m_shatterOpacity -= SHATTER_OPACITY_STEP; // 降低透明度
+
+    if (m_shatterOpacity <= 0.0) {
+        m_shatterOpacity = 0.0;
+        m_shatterTimer->stop();         // 停止计时器
+        m_shatterState = Shattered;     // 标记为“已破碎”
+    }
+}
+// --- 【新增】实现获取屋顶最高点世界坐标的函数 ---
+QPointF House::getRoofPeakWorldPosition() const
+{
+    QTransform transform;
+    // 【重要】使用与 getRoofPath() 完全相同的变换！
+    transform.translate(m_position.x(), m_position.y());
+    transform.scale(m_scale, m_scale);
+    // 返回经过变换后的最高点坐标
+    return transform.map(m_roofPeak);
 }
 
 // QPainterPath House::getRoofPath() const
@@ -109,6 +178,21 @@ void House::draw(QPainter* painter)
         qreal doorY = m_position.y() - m_doorPixmap.height()+ doorOffsetY;
         painter->drawPixmap(QPointF(doorX, doorY), m_doorPixmap);
     }
+
+
+    // --- 【新增】绘制破碎效果 ---
+    // 如果房屋正在破碎，就在指定位置绘制带透明度的破碎贴图
+    if (m_shatterState == Shattering) {
+        painter->save(); // 保存当前的 painter 状态
+        painter->setOpacity(m_shatterOpacity); // 设置透明度
+
+        // 以破碎点为中心绘制破碎贴图
+        QPointF drawPos = m_shatterPosition - QPointF(m_shatteredPixmap.width() / 2.0, m_shatteredPixmap.height() / 2.0);
+        painter->drawPixmap(drawPos, m_shatteredPixmap);
+
+        painter->restore(); // 恢复 painter 状态，避免影响其他物体
+    }
+
 
     // --- 【核心新增】Debug模式下绘制碰撞路径 ---
     painter->save();

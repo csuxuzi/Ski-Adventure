@@ -15,11 +15,13 @@ const int TERRAIN_POINT_INTERVAL = 20; // 每个地形点的水平间距
 const int TERRAIN_MIN_Y = 450;         // 地形的最低高度
 const int TERRAIN_MAX_Y = 550;         // 地形的最高高度
 const qreal SCROLL_SPEED = 2.0;        // 地面的滚动速度
+const qreal PLAYER_VISIBLE_Y_MIN = 550.0;
+const qreal PLAYER_VISIBLE_Y_MAX = 600.0;
 // 定义玩家在屏幕上固定的X轴位置
 const qreal PLAYER_FIXED_X = 200.0;
 
 GameScreen::GameScreen(QWidget *parent)
-    : QWidget(parent), m_backgroundOffset(0), m_worldOffset(0) // 初始化 m_worldOffset
+    : QWidget(parent), m_backgroundOffset(0), m_worldOffset(0), m_verticalOffset(0) // 初始化 m_worldOffset
 {
     // 1. 加载背景图，如果失败则创建一个蓝色背景作为占位符
     if (!m_backgroundPixmap.load(":/assets/images/game_background.png")) {
@@ -146,7 +148,20 @@ void GameScreen::updateGame()
         // --- 3. 【核心修改】更新世界偏移量 ---
         // 世界的偏移量 = 玩家在世界中的X坐标 - 玩家在屏幕上固定的X坐标
         m_worldOffset = m_player->position().x() - PLAYER_FIXED_X;
+        // 2. 更新垂直镜头偏移 (新增逻辑)
+        // 定义一个角色在屏幕上活动的“安全窗口”
 
+
+        // 计算角色当前在屏幕上的Y坐标
+        qreal playerScreenY = m_player->position().y() - m_verticalOffset;
+
+        if (playerScreenY > PLAYER_VISIBLE_Y_MAX) {
+            // 如果角色低于窗口下沿，则镜头向下移动
+            m_verticalOffset = m_player->position().y() - PLAYER_VISIBLE_Y_MAX;
+        } else if (playerScreenY < PLAYER_VISIBLE_Y_MIN) {
+            // 如果角色高于窗口上沿，则镜头向上移动
+            m_verticalOffset = m_player->position().y() - PLAYER_VISIBLE_Y_MIN;
+        }
         // 【核心修正】让背景图以一个恒定的慢速独立滚动
         // m_backgroundOffset += 1.5; // 您可以调整这个值来控制背景滚动的快慢
         // if (m_backgroundOffset >= width()) { // 相应地，这里的判断条件也要调整
@@ -211,16 +226,18 @@ void GameScreen::updateSnow()
         // 此处可以加入更丰富的地形生成算法
         // qreal newY = QRandomGenerator::global()->bounded(TERRAIN_MIN_Y, TERRAIN_MAX_Y);
         // newY = (lastY * 3 + newY) / 4; // 做一个简单的平滑处理
-        if(i>100){
-            i = 0;
-        }
+        // if(i>100){
+        //     i = 0;
+        // }
+        // qreal newY = lastY;
+        // if(i<=50){
+        //     newY += i/10;
+        // }else{
+        //     //newY -= (i-50)/10+0.3;
+        // }
+        // i++;
+
         qreal newY = lastY;
-        if(i<=50){
-            newY += i/10;
-        }else{
-            //newY -= (i-50)/10+0.3;
-        }
-        i++;
         m_snowPoints.append(QPointF(lastX + TERRAIN_POINT_INTERVAL, newY));
 
     }
@@ -283,17 +300,18 @@ void GameScreen::updateSnowPath()
 
     // 开始构建路径
     m_snowPath = QPainterPath();
-    // 1. 将起点移动到屏幕左下角
-    m_snowPath.moveTo(m_snowPoints.first().x(), height());
+    // 【核心修正】计算当前镜头的实际底部Y坐标
+    qreal bottomY = m_verticalOffset + height();
+    // 1. 将起点移动到屏幕左下角 (使用新的底部坐标)
+    m_snowPath.moveTo(m_snowPoints.first().x(), bottomY);
     // 2. 画一条线到第一个地形点
     m_snowPath.lineTo(m_snowPoints.first());
     // 3. 将所有地形点连接成一条曲线
-    //    为了让曲线更平滑，这里可以使用 cubicTo，但先用 lineTo 实现基础功能
     for (int i = 1; i < m_snowPoints.size(); ++i) {
         m_snowPath.lineTo(m_snowPoints[i]);
     }
-    // 4. 从最后一个地形点画一条线到屏幕右下角
-    m_snowPath.lineTo(m_snowPoints.last().x(), height());
+    // 4. 从最后一个地形点画一条线到屏幕右下角 (使用新的底部坐标)
+    m_snowPath.lineTo(m_snowPoints.last().x(), bottomY);
     // 5. 闭合路径，形成一个封闭的多边形
     m_snowPath.closeSubpath();
 }
@@ -308,7 +326,7 @@ void GameScreen::placePlayer()
     // 获取该位置的地形信息（Y坐标和坡度）
     auto terrain_info = getTerrainInfoAt(player_x);
 
-    // 设置玩家的初始位置和旋转
+    // 设置玩家的初始位置和旋转checkCollisions
     m_player->setPosition(terrain_info.first);
     m_player->setRotation(terrain_info.second);
 
@@ -378,7 +396,7 @@ void GameScreen::paintEvent(QPaintEvent *event)
     // --- 【核心修改】绘制游戏世界 ---
     painter.save();
     // 将整个坐标系向左移动 worldOffset 的距离
-    painter.translate(-m_worldOffset, 0);
+    painter.translate(-m_worldOffset, -m_verticalOffset);
 
     // 在这个被移动过的坐标系里，正常绘制所有游戏对象即可
     // 1. 绘制雪地
@@ -444,7 +462,7 @@ void GameScreen::setupObstacles()
     // --- 新增：创建房屋 ---
     House* house1 = new House(this);
     // 房屋的Y坐标应该根据地形来设置，使其底部贴着地面
-    house1->setPosition(QPointF(2000, getTerrainInfoAt(600).first.y()));
+    house1->setPosition(QPointF(2000, getTerrainInfoAt(600).first.y()+55));
     m_houses.append(house1);
 
     // 您可以根据需要添加更多的石头或其他障碍物
@@ -458,62 +476,143 @@ void GameScreen::checkCollisions()
     // 默认玩家不在任何地面上，受重力影响
     m_player->onGround = false;
 
-    // --- 1. 优先检测与屋顶的碰撞 ---
+    // 1. 创建一个标志，用于记录本轮检测中玩家是否接触了任何可滑行表面
+    bool isPlayerOnASurface = false;
+
+    // --- 2. 优先检测与屋顶的碰撞 ---
     for (House* house : m_houses) {
-        QPainterPath roofPath = house->getRoofPath();
-        auto roofInfo = getPathInfoAt(roofPath, m_player->position().x());
+        QPainterPath roofPath = house->getRoofPath(); // 获取屋顶的世界坐标路径
+        QPointF peakWorldPos = house->getRoofPeakWorldPosition(); // 获取屋顶最高点的世界坐标
+        auto roofInfo = getPathInfoAt(roofPath, m_player->position().x()); // 获取玩家当前X坐标对应的屋顶信息
 
-        // 检查玩家的X坐标是否在屋顶的水平范围内
-        if (roofInfo.first.y() != 0) { // getPathInfoAt 找到有效线段的标志
-            qreal roofY = roofInfo.first.y();
-            // 如果玩家是从上方接触屋顶
-            if (m_player->position().y() <= roofY + 0.05 && m_player->velocity().y() >= 0) {
-                // --- 玩家在屋顶上，执行滑行逻辑 ---
-                m_player->onGround = true; // 标记玩家在地面上
+        // --- 首先处理从下方跳跃的碰撞 ---
+        QPointF leftCorner = house->getRoofLeftCornerWorldPosition();
+        QPointF rightCorner = house->getRoofRightCornerWorldPosition();
 
-                qreal roofAngle = roofInfo.second;
+        // 玩家的碰撞矩形顶部Y坐标
+        qreal playerTopY = m_player->collisionRect().top();
+        // 检查玩家是否正在向上移动，并且其X坐标在屋顶底边范围内
+        if (m_player->velocity().y() < 0 &&
+            m_player->position().x() > leftCorner.x() &&
+            m_player->position().x() < rightCorner.x()) {
+
+            // 如果玩家的头顶即将或已经接触到屋顶底边
+            if (playerTopY < leftCorner.y()) {
+                // 碰撞生效
                 QPointF playerPos = m_player->position();
-                playerPos.setY(roofY);
+                // 将玩家的位置校正到屋顶底边下方，防止穿透
+                playerPos.setY(leftCorner.y() + m_player->collisionRect().height());
                 m_player->setPosition(playerPos);
-                m_player->setRotation(roofAngle);
+                // 阻止向上的速度，使其自然下落
+                m_player->setVelocity(QVector2D(m_player->velocity().x(), 0));
 
-                QVector2D airVelocity = m_player->velocity();
-                QVector2D groundDirection(qCos(qDegreesToRadians(roofAngle)), qSin(qDegreesToRadians(roofAngle)));
-                qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
-                if (newSpeed < 0) newSpeed = 0;
-                m_player->setVelocity(groundDirection * newSpeed);
+                // 触发破碎效果
+                house->shatter(QPointF(m_player->position().x(), leftCorner.y()));
 
-                // 既然已经在屋顶上，就无需再检测其他地面，直接返回
-                return;
+                // 因为已经处理了天花板碰撞，直接跳到末尾
+                goto end_surface_check;
+            }
+        }
+        // getPathInfoAt 在找不到有效路径段时会返回一个Y值为0的点, 我们用此判断玩家是否在屋顶的水平投影范围内
+        if (roofInfo.first.y() != 0) {
+            qreal roofY = roofInfo.first.y();
+
+            // // 【核心修正】判断玩家是否在屋顶上的新逻辑
+            // // 不再单纯依赖速度，而是检查玩家Y坐标是否与屋顶Y坐标足够接近 (允许5个像素的误差)
+            // if (fabs(m_player->position().y() - roofY) < 5.0) {
+
+            //     // --- 确认玩家在屋顶上，执行滑行逻辑 ---
+            //     isPlayerOnASurface = true; // 标记玩家在本帧接触到了表面
+
+            //     // 精确地将玩家放回屋顶表面
+            //     qreal roofAngle = roofInfo.second;
+            //     QPointF playerPos = m_player->position();
+            //     playerPos.setY(roofY);
+            //     m_player->setPosition(playerPos);
+            //     m_player->setRotation(roofAngle);
+
+            //     // 根据屋顶坡度重新计算滑行速度 (此部分逻辑是正确的，予以保留)
+            //     QVector2D airVelocity = m_player->velocity();
+            //     QVector2D groundDirection(qCos(qDegreesToRadians(roofAngle)), qSin(qDegreesToRadians(roofAngle)));
+            //     qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
+            //     if (newSpeed < 0) newSpeed = 0; // 防止上坡时倒滑
+            //     m_player->setVelocity(groundDirection * newSpeed);
+
+            //     // 既然已经在屋顶上，就无需再检测其他地面，直接跳到函数末尾的石头检测部分
+            //     goto end_surface_check;
+            // }
+
+            // 如果玩家当前位置与屋顶表面足够近，则视为接触
+            if (fabs(m_player->position().y() - roofY) < 5.0) {
+                // --- 【核心新增】在这里调用房屋的破碎方法 ---
+                // 将玩家的当前位置作为破碎效果的触发点
+                house->shatter(m_player->position());
+                // 【核心逻辑】判断玩家在屋顶的左侧还是右侧
+                if (m_player->position().x() < peakWorldPos.x()) {
+                    // --- 逻辑A：在屋顶左侧，正常滑行 ---
+                    isPlayerOnASurface = true; // 标记玩家在地面上
+
+                    qreal roofAngle = roofInfo.second;
+                    QPointF playerPos = m_player->position();
+                    playerPos.setY(roofY); // 精确地放回表面
+                    m_player->setPosition(playerPos);
+                    m_player->setRotation(roofAngle);
+
+                    // 根据坡度重新计算速度
+                    QVector2D airVelocity = m_player->velocity();
+                    QVector2D groundDirection(qCos(qDegreesToRadians(roofAngle)), qSin(qDegreesToRadians(roofAngle)));
+                    qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
+                    if (newSpeed < 0) newSpeed = 0;
+                    m_player->setVelocity(groundDirection * newSpeed);
+
+                    // 已在屋顶上处理完毕，直接跳到末尾的石头检测
+                    goto end_surface_check;
+
+                } else {
+                    // --- 逻辑B：在屋顶右侧，作为“墙”进行挤压 ---
+                    // 我们只校正玩家的位置以防止穿透，不改变他的速度、角度，也不认为他在“地面”上。
+                    // 这样他就会保持原有的运动轨迹，但被墙挡住。
+                    QPointF playerPos = m_player->position();
+                    playerPos.setY(roofY); // 仅将Y坐标校正到墙面，防止穿透
+                    m_player->setPosition(playerPos);
+                    // 【注意】这里不设置 isPlayerOnASurface = true，所以玩家依然受重力影响。
+                }
             }
         }
     }
 
-    // --- 2. 如果不在屋顶上，再检测与雪地的碰撞 ---
-    auto terrainInfo = getTerrainInfoAt(m_player->position().x());
-    qreal terrainY = terrainInfo.first.y();
+    // --- 3. 如果不在任何屋顶上，再检测与雪地的碰撞 ---
+    // 这个 'if' 判断确保了只有在玩家没有接触任何屋顶时，才会进行雪地检测
+    if (!isPlayerOnASurface) {
+        auto terrainInfo = getTerrainInfoAt(m_player->position().x());
+        qreal terrainY = terrainInfo.first.y();
 
-    if (m_player->position().y() >= terrainY && m_player->velocity().y() >= 0) {
-        // --- 玩家在雪地上，执行滑行逻辑 ---
-        m_player->onGround = true; // 标记玩家在地面上
+        // 同样使用改进后的逻辑来判断
+        if (m_player->position().y() >= terrainY - 1.0 && m_player->velocity().y() >= 0) {
+            // --- 玩家在雪地上，执行滑行逻辑 ---
+            isPlayerOnASurface = true; // 标记玩家在本帧接触到了表面
 
-        qreal terrainAngle = terrainInfo.second;
-        QPointF playerPos = m_player->position();
-        playerPos.setY(terrainY);
-        m_player->setPosition(playerPos);
-        m_player->setRotation(terrainAngle);
+            // 与屋顶逻辑完全相同的物理处理
+            qreal terrainAngle = terrainInfo.second;
+            QPointF playerPos = m_player->position();
+            playerPos.setY(terrainY);
+            m_player->setPosition(playerPos);
+            m_player->setRotation(terrainAngle);
 
-        QVector2D airVelocity = m_player->velocity();
-        QVector2D groundDirection(qCos(qDegreesToRadians(terrainAngle)), qSin(qDegreesToRadians(terrainAngle)));
-        qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
-        if (newSpeed < 0) newSpeed = 0;
-        m_player->setVelocity(groundDirection * newSpeed);
-
-        return; // 在雪地上，也无需再检测
+            QVector2D airVelocity = m_player->velocity();
+            QVector2D groundDirection(qCos(qDegreesToRadians(terrainAngle)), qSin(qDegreesToRadians(terrainAngle)));
+            qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
+            if (newSpeed < 0) newSpeed = 0;
+            m_player->setVelocity(groundDirection * newSpeed);
+        }
     }
 
+end_surface_check: // 标签，用于从屋顶检测直接跳转过来
+    // --- 4. 根据本轮检测结果，最终确定玩家的在/离地状态 ---
+    // 只有当 isPlayerOnASurface 为 true 时，才设置 onGround 为 true
+    m_player->onGround = isPlayerOnASurface;
 
-    // --- 3. 最后检测与石头的碰撞 (此逻辑与地面状态无关) ---
+    // --- 5. 最后检测与石头的碰撞 (此逻辑与地面状态无关) ---
     for (Obstacle* obs : m_obstacles) {
         Stone* stone = dynamic_cast<Stone*>(obs);
         if (stone && stone->currentState == Stone::Intact) {
@@ -522,6 +621,71 @@ void GameScreen::checkCollisions()
             }
         }
     }
+
+    // // --- 1. 优先检测与屋顶的碰撞 ---
+    // for (House* house : m_houses) {
+    //     QPainterPath roofPath = house->getRoofPath();
+    //     auto roofInfo = getPathInfoAt(roofPath, m_player->position().x());
+
+    //     // 检查玩家的X坐标是否在屋顶的水平范围内
+    //     if (roofInfo.first.y() != 0) { // getPathInfoAt 找到有效线段的标志
+    //         qreal roofY = roofInfo.first.y();
+    //         // 如果玩家是从上方接触屋顶
+    //         if (m_player->position().y() <= roofY + 0.05 && m_player->velocity().y() >= 0) {
+    //             // --- 玩家在屋顶上，执行滑行逻辑 ---
+    //             m_player->onGround = true; // 标记玩家在地面上
+
+    //             qreal roofAngle = roofInfo.second;
+    //             QPointF playerPos = m_player->position();
+    //             playerPos.setY(roofY);
+    //             m_player->setPosition(playerPos);
+    //             m_player->setRotation(roofAngle);
+
+    //             QVector2D airVelocity = m_player->velocity();
+    //             QVector2D groundDirection(qCos(qDegreesToRadians(roofAngle)), qSin(qDegreesToRadians(roofAngle)));
+    //             qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
+    //             if (newSpeed < 0) newSpeed = 0;
+    //             m_player->setVelocity(groundDirection * newSpeed);
+
+    //             // 既然已经在屋顶上，就无需再检测其他地面，直接返回
+    //             return;
+    //         }
+    //     }
+    // }
+
+    // // --- 2. 如果不在屋顶上，再检测与雪地的碰撞 ---
+    // auto terrainInfo = getTerrainInfoAt(m_player->position().x());
+    // qreal terrainY = terrainInfo.first.y();
+
+    // if (m_player->position().y() >= terrainY && m_player->velocity().y() >= 0) {
+    //     // --- 玩家在雪地上，执行滑行逻辑 ---
+    //     m_player->onGround = true; // 标记玩家在地面上
+
+    //     qreal terrainAngle = terrainInfo.second;
+    //     QPointF playerPos = m_player->position();
+    //     playerPos.setY(terrainY);
+    //     m_player->setPosition(playerPos);
+    //     m_player->setRotation(terrainAngle);
+
+    //     QVector2D airVelocity = m_player->velocity();
+    //     QVector2D groundDirection(qCos(qDegreesToRadians(terrainAngle)), qSin(qDegreesToRadians(terrainAngle)));
+    //     qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
+    //     if (newSpeed < 0) newSpeed = 0;
+    //     m_player->setVelocity(groundDirection * newSpeed);
+
+    //     return; // 在雪地上，也无需再检测
+    // }
+
+
+    // // --- 3. 最后检测与石头的碰撞 (此逻辑与地面状态无关) ---
+    // for (Obstacle* obs : m_obstacles) {
+    //     Stone* stone = dynamic_cast<Stone*>(obs);
+    //     if (stone && stone->currentState == Stone::Intact) {
+    //         if (m_player->collisionRect().intersects(stone->collisionRect())) {
+    //             stone->shatter();
+    //         }
+    //     }
+    // }
 
 
     // for (Obstacle* obs : m_obstacles) {

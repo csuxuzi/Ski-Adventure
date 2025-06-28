@@ -1,0 +1,5 @@
+D:/QtProject/SkiAdventure/build/Desktop_Qt_6_9_1_MinGW_64_bit-Debug/CMakeFiles/SkiAdventure.dir
+D:/QtProject/SkiAdventure/build/Desktop_Qt_6_9_1_MinGW_64_bit-Debug/CMakeFiles/edit_cache.dir
+D:/QtProject/SkiAdventure/build/Desktop_Qt_6_9_1_MinGW_64_bit-Debug/CMakeFiles/rebuild_cache.dir
+D:/QtProject/SkiAdventure/build/Desktop_Qt_6_9_1_MinGW_64_bit-Debug/CMakeFiles/SkiAdventure_autogen_timestamp_deps.dir
+D:/QtProject/SkiAdventure/build/Desktop_Qt_6_9_1_MinGW_64_bit-Debug/CMakeFiles/SkiAdventure_autogen.dir
