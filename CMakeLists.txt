@@ -24,6 +24,9 @@ add_executable(SkiAdventure
     src/game/GameObject.h src/game/GameObject.cpp
 
     src/game/player.h src/game/player.cpp
+    src/game/obstacle.h src/game/obstacle.cpp
+    src/game/stone.h src/game/stone.cpp
+    src/game/house.h src/game/house.cpp
 )
 
 
@@ -41,7 +44,8 @@ target_sources(SkiAdventure PRIVATE
     src/game/Player.h
     src/ui/ImageButton.h           # <-- 【新增行】
     src/ui/PlaceholderDialog.h     # <-- 【新增行】
-
+    src/game/stone.h
+    src/game/house.h
     # 源文件 (.cpp)
     src/ui/MainWindow.cpp
     src/ui/MainMenuScreen.cpp
@@ -49,7 +53,9 @@ target_sources(SkiAdventure PRIVATE
     src/audio/AudioManager.cpp
     src/game/GameObject.cpp
     src/ui/GameScreen.cpp
+    src/game/stone.cpp
     src/game/Player.cpp
+    src/game/house.cpp
     src/ui/ImageButton.cpp         # <-- 【新增行】
     src/ui/PlaceholderDialog.cpp   # <-- 【新增行】
 

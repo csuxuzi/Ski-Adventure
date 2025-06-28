@@ -12,8 +12,26 @@
         <file>house.png</file>
         <file>game_background.png</file>
         <file>player.png</file>
+        <file>stone_large.png</file>
+        <file>stone_small.png</file>
+        <file>stone_large1.png</file>
+        <file>stone_small1.png</file>
+        <file>stone_shattered.png</file>
+        <file>house_door.png</file>
     </qresource>
     <qresource prefix="/assets/audio/music">
         <file>main_menu.mp3</file>
+    </qresource>
+    <qresource prefix="/assets/images/player">
+        <file>jump_1.png</file>
+        <file>jump_2.png</file>
+        <file>jump_3.png</file>
+        <file>jump_4.png</file>
+        <file>jump_5.png</file>
+        <file>jump_6.png</file>
+        <file>jump_7.png</file>
+        <file>jump_8.png</file>
+        <file>jump_9.png</file>
+        <file>jump_10.png</file>
     </qresource>
 </RCC>

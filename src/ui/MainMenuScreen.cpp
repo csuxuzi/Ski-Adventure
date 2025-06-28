@@ -9,7 +9,7 @@
 #include <QVBoxLayout>
 #include <QPropertyAnimation>
 #include <QDebug>
-
+#include "game/House.h"
 MainMenuScreen::MainMenuScreen(QWidget *parent) : QWidget(parent)
 {
     setupScene();//初始化游戏的背景场景（如背景图、
@@ -37,10 +37,30 @@ void MainMenuScreen::setupScene()
     QGraphicsPixmapItem* bgItem = new QGraphicsPixmapItem(QPixmap(":/assets/images/scene_background.png"));
     m_scene->addItem(bgItem);
 
-    // 2. 添加房子
-    QGraphicsPixmapItem* houseItem = new QGraphicsPixmapItem(QPixmap(":/assets/images/house.png"));
-    houseItem->setPos(100, 350); // 您可以调整房子的初始位置
+    // --- 【核心修正】在这里创建带门的房子 ---
+
+    // 2. 加载房子和门的图片，以便获取它们的尺寸
+    QPixmap housePixmap(":/assets/images/house.png");
+    QPixmap doorPixmap(":/assets/images/house_door.png");
+
+    // 3. 创建房子的图形项 (QGraphicsPixmapItem)
+    QGraphicsPixmapItem* houseItem = new QGraphicsPixmapItem(housePixmap);
+    houseItem->setPos(100, 350); // 设置房子的位置
     m_scene->addItem(houseItem);
+
+    // 4. 创建门的图形项
+    QGraphicsPixmapItem* doorItem = new QGraphicsPixmapItem(doorPixmap);
+
+    // --- 【核心修正】在这里定义您可以随时修改的门的位置偏移量 ---
+    const qreal doorOffsetX = -162; // X方向偏移量：负数向左，正数向右
+    const qreal doorOffsetY = -85; // Y方向偏移量：负数向上，正数向下
+
+    // 5. 计算最终的门的位置
+    //    基础位置是房子的右下角，然后应用您的自定义偏移
+    qreal doorX = houseItem->x() + housePixmap.width() + doorOffsetX;
+    qreal doorY = houseItem->y() + housePixmap.height() - doorPixmap.height() + doorOffsetY;
+    doorItem->setPos(doorX, doorY);
+    m_scene->addItem(doorItem);
 }
 
 void MainMenuScreen::setupUI()
