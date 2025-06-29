@@ -3,7 +3,7 @@
 #include <QTimer>
 // 定义一些物理常量，方便调整
 const qreal GRAVITY = 0.6;         // 重力加速度
-const qreal JUMP_FORCE = -17.5;    // 向上的跳跃冲力 (Y轴向上为负)
+const qreal JUMP_FORCE = -16.5;    // 向上的跳跃冲力 (Y轴向上为负)
 const int ANIMATION_FRAME_RATE = 50; // 动画帧率，单位：毫秒 (50ms = 20 FPS)
 Player::Player(QObject *parent) : GameObject(parent), m_currentFrameIndex(0)
 {

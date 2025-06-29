@@ -27,6 +27,11 @@ add_executable(SkiAdventure
     src/game/obstacle.h src/game/obstacle.cpp
     src/game/stone.h src/game/stone.cpp
     src/game/house.h src/game/house.cpp
+    src/game/seesaw.h src/game/seesaw.cpp
+    src/game/signboard.h src/game/signboard.cpp
+    src/ui/pausedialog.h src/ui/pausedialog.cpp
+    src/game/avalanche.h src/game/avalanche.cpp
+    src/ui/gameoverdialog.h src/ui/gameoverdialog.cpp
 )
 
 
@@ -46,6 +51,9 @@ target_sources(SkiAdventure PRIVATE
     src/ui/PlaceholderDialog.h     # <-- 【新增行】
     src/game/stone.h
     src/game/house.h
+    src/game/seesaw.h
+    src/game/avalanche.h
+    src/ui/gameoverdialog.h
     # 源文件 (.cpp)
     src/ui/MainWindow.cpp
     src/ui/MainMenuScreen.cpp
@@ -58,6 +66,9 @@ target_sources(SkiAdventure PRIVATE
     src/game/house.cpp
     src/ui/ImageButton.cpp         # <-- 【新增行】
     src/ui/PlaceholderDialog.cpp   # <-- 【新增行】
+    src/game/seesaw.cpp
+    src/game/avalanche.cpp
+    src/ui/gameoverdialog.cpp
 
     # 资源文件 (.qrc)
     resources.qrc

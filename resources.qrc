@@ -19,6 +19,14 @@
         <file>stone_shattered.png</file>
         <file>house_door.png</file>
         <file>house_shattered.png</file>
+        <file>seesaw.png</file>
+        <file>seesaw_shattered.png</file>
+        <file>signboard.png</file>
+        <file>signboard_shattered.png</file>
+        <file>btn_pause.png</file>
+        <file>btn_restart.png</file>
+        <file>btn_resume.png</file>
+        <file>btn_exit.png</file>
     </qresource>
     <qresource prefix="/assets/audio/music">
         <file>main_menu.mp3</file>

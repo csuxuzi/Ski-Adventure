@@ -14,7 +14,7 @@ class MainMenuScreen : public QWidget
 
 public:
     explicit MainMenuScreen(QWidget *parent = nullptr);
-
+    void resetUI(); // <-- 【新增】公开的UI重置函数
 signals:
     void startGameClicked();
     void settingsClicked();

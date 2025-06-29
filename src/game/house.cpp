@@ -51,9 +51,9 @@ House::House(QObject *parent)
     // 2. 先根据原始图片尺寸，定义屋顶路径的“形状”
     qreal width = m_originalPixmap.width();
     qreal height = m_originalPixmap.height();
-    QPointF leftCorner(-width*0.4088, -height * 0.4218);
-    QPointF topPeak(width*0.02, -height*0.6328);
-    QPointF rightCorner(width*0.1276, -height * 0.4218);
+    QPointF leftCorner(-width*0.4088, -height * 0.4218-height * 0.3218);
+    QPointF topPeak(width*0.02, -height*0.6328-height * 0.3218);
+    QPointF rightCorner(width*0.1276, -height * 0.4218-height * 0.3218);
 
 
     // --- 【修改】存储屋顶最高点的局部坐标 ---
@@ -145,8 +145,8 @@ QPainterPath House::getRoofPath() const
 
     // --- 【核心修正】颠倒这里的顺序 ---
     // 1. 先定义平移：将坐标系移动到物体在世界中的位置
-    transform.translate(m_position.x(), m_position.y()-m_originalPixmap.height() * 0.4218/2);
-
+    //transform.translate(m_position.x(), m_position.y()-m_originalPixmap.height() * 0.4218/2);
+    transform.translate(m_position.x(), m_position.y());
     // 2. 再定义缩放：围绕新的原点（即物体中心）进行缩放
     transform.scale(m_scale, m_scale);
 

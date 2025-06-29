@@ -25,6 +25,17 @@ MainMenuScreen::MainMenuScreen(QWidget *parent) : QWidget(parent)
     connect(m_startButton, &QPushButton::clicked, this, &MainMenuScreen::startAvalancheAnimation);
 }
 
+// 【新增】实现 resetUI 函数
+void MainMenuScreen::resetUI()
+{
+    m_startButton->show();
+    m_toggleButton->show();
+    // 如果抽屉是打开状态，也把它关上
+    if (m_isDrawerOpen) {
+        toggleDrawer();
+    }
+}
+
 void MainMenuScreen::setupScene()
 {
     m_scene = new QGraphicsScene(0, 0, 800, 600);//创建一个800x600像素大小的图形场景-背景图片
@@ -109,6 +120,11 @@ void MainMenuScreen::setupUI()
     ///创建用于打开/关闭抽屉的箭头按钮。
     m_toggleButton = new ImageButton(":/assets/images/drawer_arrow_open.png", this);
 
+    // --- 【新增修复】在这里只创建一次动画对象 ---
+    m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
+    m_drawerAnimation->setDuration(300);
+    m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
+
     // --- 3. 连接抽屉内按钮的信号 ---
     // connect(settingsBtn, &QPushButton::clicked, this, &MainMenuScreen::settingsClicked);
     // connect(helpBtn, &QPushButton::clicked, this, &MainMenuScreen::showHelp);
@@ -122,47 +138,113 @@ void MainMenuScreen::setupUI()
 
 }
 
+// void MainMenuScreen::toggleDrawer()
+// {
+//     // int startY, endY;
+//     if (m_drawerAnimation && m_drawerAnimation->state() == QAbstractAnimation::Running) {
+//         return;
+//     }
+//     m_drawerContainer->setVisible(true);
+//     int startX, endX;
+//     if (m_isDrawerOpen) {
+//         // // 关闭抽屉
+//         // startY = this->height() - m_drawerContainer->height();
+//         // endY = this->height();
+//         // m_drawerButton->setIcon(QIcon(":/assets/images/drawer_arrow_open.png"));
+//         startX = m_toggleButton->pos().x();
+//         endX = -m_drawerContainer->width();
+//         m_toggleButton->setIcon(QIcon(":/assets/images/drawer_arrow_open.png"));
+//     } else {
+//         // 打开抽屉
+//         // startY = this->height();
+//         // endY = this->height() - m_drawerContainer->height();
+//         // m_drawerButton->setIcon(QIcon(":/assets/images/drawer_arrow_close.png"));
+//         startX = -m_drawerContainer->width();
+//         endX = m_toggleButton->pos().x();
+//         m_toggleButton->updateIcon(QPixmap(":/assets/images/drawer_arrow_close.png"));
+//     }
+
+//     m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
+//     m_drawerAnimation->setDuration(300); // 动画时长300毫秒
+//     // m_drawerAnimation->setStartValue(QPoint(10, startY));
+//     // m_drawerAnimation->setEndValue(QPoint(10, endY));
+//     // m_drawerAnimation->setEasingCurve(QEasingCurve::InOutQuad); // 缓动曲线
+//     m_drawerAnimation->setStartValue(QPoint(startX, this->height() - m_drawerContainer->height()));
+//     m_drawerAnimation->setEndValue(QPoint(endX, this->height() - m_drawerContainer->height()));
+//     m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
+//     m_drawerAnimation->start(QAbstractAnimation::DeleteWhenStopped);
+//     // 【新增代码】连接 finished 信号，在动画播放完毕后将指针置空
+//     // connect(m_drawerAnimation, &QPropertyAnimation::finished, this, [this]() {
+//     //     m_drawerAnimation = nullptr;
+//     // });
+//     m_isDrawerOpen = !m_isDrawerOpen;
+// }
+
+// void MainMenuScreen::toggleDrawer()
+// {
+//     // 【最终修正】只在没有动画正在播放时，才创建新动画
+//     if (m_drawerAnimation && m_drawerAnimation->state() == QAbstractAnimation::Running) {
+//         return;
+//     }
+
+//     m_drawerContainer->setVisible(true);
+//     int startX, endX;
+//     if (m_isDrawerOpen) {
+//         // 关闭抽屉
+//         startX = m_toggleButton->pos().x();
+//         endX = -m_drawerContainer->width();
+//         m_toggleButton->updateIcon(QPixmap(":/assets/images/drawer_arrow_open.png"));
+//     } else {
+//         // 打开抽屉
+//         startX = -m_drawerContainer->width();
+//         endX = m_toggleButton->pos().x();
+//         m_toggleButton->updateIcon(QPixmap(":/assets/images/drawer_arrow_close.png"));
+//     }
+
+//     // 创建新动画，并让Qt在播放完后自动删除它
+//     m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
+//     m_drawerAnimation->setDuration(300);
+//     m_drawerAnimation->setStartValue(QPoint(startX, this->height() - m_drawerContainer->height()));
+//     m_drawerAnimation->setEndValue(QPoint(endX, this->height() - m_drawerContainer->height()));
+//     m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
+//     m_drawerAnimation->start(QAbstractAnimation::DeleteWhenStopped);
+
+//     m_isDrawerOpen = !m_isDrawerOpen;
+// }
+
 void MainMenuScreen::toggleDrawer()
 {
-    // int startY, endY;
-    if (m_drawerAnimation && m_drawerAnimation->state() == QAbstractAnimation::Running) {
+    // 1. 如果动画正在播放，则不做任何事
+    if (m_drawerAnimation->state() == QAbstractAnimation::Running) {
         return;
     }
+
     m_drawerContainer->setVisible(true);
+
+    // 2. 根据当前状态，设置动画的起始点和终点
     int startX, endX;
     if (m_isDrawerOpen) {
-        // // 关闭抽屉
-        // startY = this->height() - m_drawerContainer->height();
-        // endY = this->height();
-        // m_drawerButton->setIcon(QIcon(":/assets/images/drawer_arrow_open.png"));
+        // 配置 "关闭" 动画
         startX = m_toggleButton->pos().x();
         endX = -m_drawerContainer->width();
-        m_toggleButton->setIcon(QIcon(":/assets/images/drawer_arrow_open.png"));
+        m_toggleButton->updateIcon(QPixmap(":/assets/images/drawer_arrow_open.png"));
     } else {
-        // 打开抽屉
-        // startY = this->height();
-        // endY = this->height() - m_drawerContainer->height();
-        // m_drawerButton->setIcon(QIcon(":/assets/images/drawer_arrow_close.png"));
+        // 配置 "打开" 动画
         startX = -m_drawerContainer->width();
         endX = m_toggleButton->pos().x();
         m_toggleButton->updateIcon(QPixmap(":/assets/images/drawer_arrow_close.png"));
     }
 
-    m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
-    m_drawerAnimation->setDuration(300); // 动画时长300毫秒
-    // m_drawerAnimation->setStartValue(QPoint(10, startY));
-    // m_drawerAnimation->setEndValue(QPoint(10, endY));
-    // m_drawerAnimation->setEasingCurve(QEasingCurve::InOutQuad); // 缓动曲线
     m_drawerAnimation->setStartValue(QPoint(startX, this->height() - m_drawerContainer->height()));
     m_drawerAnimation->setEndValue(QPoint(endX, this->height() - m_drawerContainer->height()));
-    m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
-    m_drawerAnimation->start(QAbstractAnimation::DeleteWhenStopped);
-    // 【新增代码】连接 finished 信号，在动画播放完毕后将指针置空
-    connect(m_drawerAnimation, &QPropertyAnimation::finished, this, [this]() {
-        m_drawerAnimation = nullptr;
-    });
+
+    // 3. 启动动画 (不再使用 DeleteWhenStopped，也不再有 connect)
+    m_drawerAnimation->start();
+
+    // 4. 切换状态
     m_isDrawerOpen = !m_isDrawerOpen;
 }
+
 void MainMenuScreen::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
