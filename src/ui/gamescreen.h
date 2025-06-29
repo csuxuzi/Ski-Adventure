@@ -16,6 +16,11 @@ class PauseDialog; // <-- 【新增】前向声明 PauseDialog
 class ImageButton; // <-- 【新增】前向声明 ImageButton
 class Avalanche;
 class GameOverDialog;
+class Mount;   // <-- 【新增】
+class Penguin; // <-- 【新增】
+class Yeti;    // <-- 【新增】
+
+
 class GameScreen : public QWidget
 {
     Q_OBJECT
@@ -63,9 +68,15 @@ private:
     void generateSteepSlope(QList<QPointF>& points, const QPointF& startPoint);
     void generateCliff(QList<QPointF>& points, const QPointF& startPoint);
 
+    //检测坐骑的碰撞
+    template<typename MountType>
+    // 修改后
+    void checkObstacleCollisionForMount(MountType* mount, qreal initialSpeed);
 
     // 【核心新增】一个专门用于分析屋顶路径的辅助函数
     QPair<QPointF, qreal> getPathInfoAt(const QPainterPath& path, qreal x_pos);
+    // --- 【新增】计算撞击角度的辅助函数 ---
+    qreal calculateImpactAngle(const QVector2D& velocity, qreal surfaceAngleDegrees) const;
 
     QTimer* m_timer;
     QPixmap m_backgroundPixmap;
@@ -81,6 +92,8 @@ private:
 
     // --- 【新增】用于暂存下一个地形块的点 ---
     QList<QPointF> m_nextTerrainSegment;
+    // --- 【新增】记录障碍物已生成到的最远X坐标 ---
+    qreal m_lastObstacleX;
 
     // 游戏实体
     Player* m_player;
@@ -94,6 +107,8 @@ private:
     ImageButton* m_pauseButton;
     PauseDialog* m_pauseDialog;
     GameOverDialog* m_gameOverDialog; // <-- 【新增】
+    QList<Penguin*> m_penguins; // <-- 【新增】
+    QList<Yeti*> m_yetis;       // <-- 【新增】
 };
 
 #endif // GAMESCREEN_H

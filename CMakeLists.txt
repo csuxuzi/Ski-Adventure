@@ -32,6 +32,9 @@ add_executable(SkiAdventure
     src/ui/pausedialog.h src/ui/pausedialog.cpp
     src/game/avalanche.h src/game/avalanche.cpp
     src/ui/gameoverdialog.h src/ui/gameoverdialog.cpp
+    src/game/mount.h src/game/mount.cpp
+    src/game/penguin.h src/game/penguin.cpp
+    src/game/yeti.h src/game/yeti.cpp
 )
 
 

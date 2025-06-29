@@ -81,9 +81,9 @@ void Seesaw::updateShatterEffect()
 void Seesaw::draw(QPainter* painter)
 {
     // 1. 如果翘板是完好的，就使用基类的方法绘制主体
-    if (m_shatterState == Intact) {
-        GameObject::draw(painter);
-    }
+    //if (m_shatterState == Intact) {
+    GameObject::draw(painter);
+    //}
 
     // 2. 如果正在破碎，就绘制破碎效果
     if (m_shatterState == Shattering) {

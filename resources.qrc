@@ -42,5 +42,47 @@
         <file>jump_8.png</file>
         <file>jump_9.png</file>
         <file>jump_10.png</file>
+        <file>crash_1.png</file>
+        <file>crash_2.png</file>
+        <file>crash_3.png</file>
+        <file>crash_4.png</file>
+        <file>crash_5.png</file>
+        <file>crash_6.png</file>
+        <file>crash_7.png</file>
+        <file>standup_1.png</file>
+        <file>standup_2.png</file>
+        <file>standup_3.png</file>
+        <file>standup_4.png</file>
+        <file>standup_5.png</file>
+        <file>standup_6.png</file>
+        <file>standup_7.png</file>
+        <file>standup_8.png</file>
+        <file>standup_9.png</file>
+        <file>standup_10.png</file>
+    </qresource>
+    <qresource prefix="/assets/images/penguin">
+        <file>penguin_1.png</file>
+        <file>penguin_2.png</file>
+        <file>penguin_3.png</file>
+        <file>penguin_4.png</file>
+        <file>penguin_5.png</file>
+    </qresource>
+    <qresource prefix="/assets/images/yeti">
+        <file>yeti_1.png</file>
+        <file>yeti_2.png</file>
+        <file>yeti_3.png</file>
+        <file>yeti_4.png</file>
+        <file>yeti_5.png</file>
+        <file>yeti_6.png</file>
+        <file>yeti_7.png</file>
+        <file>yeti_8.png</file>
+        <file>yeti_9.png</file>
+        <file>yeti_10.png</file>
+        <file>yeti_11.png</file>
+        <file>yeti_12.png</file>
+        <file>yeti_13.png</file>
+        <file>yeti_14.png</file>
+        <file>yeti_15.png</file>
+        <file>yeti_16.png</file>
     </qresource>
 </RCC>
