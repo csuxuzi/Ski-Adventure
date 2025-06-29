@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPixmap>
 #include <QPainterPath>
+#include <QQueue> // <-- 【新增】包含 QQueue 头文件
 
 class QTimer;
 class GameObject; // 前向声明
@@ -26,6 +27,13 @@ class GameScreen : public QWidget
     Q_OBJECT
 
 public:
+    // 【新增】定义地形片段的类型
+    enum TerrainType {
+        Gentle,
+        Steep,
+        Cliff
+    };
+
     explicit GameScreen(QWidget *parent = nullptr);
     void startGame();
     void stopGame();
@@ -57,16 +65,32 @@ private:
     void resetGameState();
     // --- 新增：放置障碍物和检测碰撞的函数 ---
     void setupObstacles();
+    void setupMounts();
     void checkCollisions();
     // --- 新增：检查物体经过触发器的函数 ---
     void checkTriggers();
     //<QPointF, qreal> getTerrainInfoAt(qreal x_pos);
     void updateSnowPath();
 
+
+    // 【新增】根据概率选择并生成下一个地形模式的函数
+    void generateNextPattern();
+
     // --- 【新增】三种地形的生成函数 ---
     void generateGentleSlope(QList<QPointF>& points, const QPointF& startPoint);
     void generateSteepSlope(QList<QPointF>& points, const QPointF& startPoint);
     void generateCliff(QList<QPointF>& points, const QPointF& startPoint);
+
+
+    // --- 【核心重构】新的素材放置总管函数 ---
+    void placeObjectsForSegment(TerrainType type, const QList<QPointF>& segmentPoints);
+    void generateMountsInWindow(qreal windowStartX);
+
+
+    // --- 【新增】辅助函数 ---
+    TerrainType getTerrainTypeAt(qreal x_pos);
+    bool isLastSegmentOfPattern(qreal x_pos);
+
 
     //检测坐骑的碰撞
     template<typename MountType>
@@ -94,6 +118,31 @@ private:
     QList<QPointF> m_nextTerrainSegment;
     // --- 【新增】记录障碍物已生成到的最远X坐标 ---
     qreal m_lastObstacleX;
+
+    // --- 【新增】模式化地形生成相关 ---
+    QQueue<TerrainType> m_terrainPatternQueue; // 存储当前模式的地形序列
+    qreal m_probNormal;         // “一般”模式的概率
+    qreal m_probExciting;       // “爽”模式的概率
+    qreal m_probSuperExciting;  // “超爽”模式的概率
+
+
+    // --- 【新增】素材概率控制变量 ---
+    qreal m_probBigStone;
+    qreal m_probHouse;
+    qreal m_probSleighInHouse;
+    qreal m_probSeesawOnCliff;
+    qreal m_probSeesawOnSteep;
+    qreal m_probPenguin_1;
+    qreal m_probPenguin_2;
+    qreal m_probPenguin_3;
+    qreal m_probYeti_1;
+    qreal m_probYeti_2;
+
+    // --- 【新增】素材生成追踪变量 ---
+    qreal m_lastObstacleGenX; // 用于障碍物窗口的生成
+    qreal m_lastMountGenX;    // 用于坐骑窗口的生成
+    qreal m_lastSignboardGenX;
+    qreal m_lastMountX = 0;;
 
     // 游戏实体
     Player* m_player;
