@@ -36,7 +36,13 @@ Signboard::Signboard(QObject *parent)
     connect(m_shatterTimer, &QTimer::timeout, this, &Signboard::updateShatterEffect);
 
     // 5. 设置初始缩放
-    setScale(1.2);
+    setScale(1.5);
+}
+
+
+void Signboard::setDistance(int distance)
+{
+    m_distance = distance;
 }
 
 QPainterPath Signboard::getBoardPath() const
@@ -87,6 +93,26 @@ void Signboard::draw(QPainter* painter)
 
     // (Debug) 绘制碰撞路径
     painter->save();
+
+    // a. 将坐标系移动到告示牌的中心点
+    painter->translate(m_position);
+    painter->rotate(m_rotation);
+    painter->scale(m_scale, m_scale); // 应用缩放，确保文字大小正确
+
+    // b. 设置文字的字体、颜色和对齐方式
+    QFont font("Impact", 20); // 您可以修改字体和大小
+    font.setBold(true);
+    painter->setFont(font);
+    painter->setPen(Qt::white); // 设置文字颜色为白色
+
+    // c. 定义文字绘制的区域 (在告示牌的中心)
+    QRectF textRect(-m_originalPixmap.width() / 2, -m_originalPixmap.height()*1.25,
+                    m_originalPixmap.width(), m_originalPixmap.height());
+
+    // d. 格式化并绘制文字
+    QString distanceText = QString("%1 m").arg(m_distance);
+    painter->drawText(textRect, Qt::AlignCenter, distanceText);
+
     QPen debugPen(Qt::blue); // 用蓝色以作区分
     debugPen.setWidth(3);
     painter->setPen(debugPen);

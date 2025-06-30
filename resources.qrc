@@ -27,9 +27,32 @@
         <file>btn_restart.png</file>
         <file>btn_resume.png</file>
         <file>btn_exit.png</file>
+        <file>avalanche.png</file>
+        <file>penguin_poof.png</file>
+        <file>yeti_poof.png</file>
+        <file>invincible_effect.png</file>
+        <file>game_title.png</file>
+        <file>arrow_left.png</file>
+        <file>arrow_right.png</file>
+        <file>warning.png</file>
+        <file>app_icon.png</file>
+        <file>help_icon.png</file>
+        <file>icon_music_off.png</file>
+        <file>icon_music_on.png</file>
+        <file>icon_sfx_off.png</file>
+        <file>icon_sfx_on.png</file>
+        <file>tree.png</file>
+        <file>highscore_icon.png</file>
+        <file>records_icon.png</file>
+        <file>敬请期待.png</file>
+        <file>dashBoard.png</file>
+        <file>leftDoor.png</file>
+        <file>sleepPlayer.png</file>
     </qresource>
     <qresource prefix="/assets/audio/music">
         <file>main_menu.mp3</file>
+        <file>game_bgm_1.wav</file>
+        <file>game_bgm_2.wav</file>
     </qresource>
     <qresource prefix="/assets/images/player">
         <file>jump_1.png</file>
@@ -59,6 +82,7 @@
         <file>standup_8.png</file>
         <file>standup_9.png</file>
         <file>standup_10.png</file>
+        <file>ride_yeti_broken.png</file>
     </qresource>
     <qresource prefix="/assets/images/penguin">
         <file>penguin_1.png</file>
@@ -84,5 +108,37 @@
         <file>yeti_14.png</file>
         <file>yeti_15.png</file>
         <file>yeti_16.png</file>
+    </qresource>
+    <qresource prefix="/assets/audio/sfx">
+        <file>button_click.wav</file>
+        <file>seesaw_shatter.wav</file>
+        <file>stone_shatter.wav</file>
+        <file>house_shatter.wav</file>
+        <file>stone_shatter2.wav</file>
+        <file>player_crash.wav</file>
+    </qresource>
+    <qresource prefix="/assets/images/coins">
+        <file>coin_1.png</file>
+        <file>coin_2.png</file>
+        <file>coin_3.png</file>
+        <file>coin_4.png</file>
+        <file>coin_5.png</file>
+        <file>coin_6.png</file>
+        <file>coin_7.png</file>
+        <file>coin_8.png</file>
+        <file>coin_9.png</file>
+        <file>coin_10.png</file>
+        <file>coin_11.png</file>
+        <file>coin_12.png</file>
+        <file>coin_13.png</file>
+        <file>coin_14.png</file>
+        <file>coin_15.png</file>
+        <file>coin_16.png</file>
+    </qresource>
+    <qresource prefix="/assets/images/help">
+        <file>help_1.png</file>
+        <file>help_2.png</file>
+        <file>help_4.png</file>
+        <file>help_3.png</file>
     </qresource>
 </RCC>

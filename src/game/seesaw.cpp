@@ -43,7 +43,7 @@ Seesaw::Seesaw(QObject *parent)
     connect(m_shatterTimer, &QTimer::timeout, this, &Seesaw::updateShatterEffect);
 
     // 5. 设置初始缩放（如果需要的话）
-    setScale(0.6); // 保持原始尺寸
+    setScale(0.7); // 保持原始尺寸
 }
 
 QPainterPath Seesaw::getPlankPath() const

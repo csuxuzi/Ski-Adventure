@@ -13,6 +13,13 @@ class Mount : public GameObject // 直接继承自 GameObject，因为它有自�
 public:
     explicit Mount(QObject *parent = nullptr);
 
+    // 【新增】定义坐骑的消失状态
+    enum DisappearState {
+        Intact,     // 完好
+        FadingOut,  // 正在淡出
+        Gone        // 已消失
+    };
+
     // 骑乘状态
     enum RidingState {
         Idle,       // 空闲状态，自己在跑
@@ -29,15 +36,32 @@ public:
     RidingState currentState;
     bool onGround;
 
+    // 【新增】触发消失动画的公共接口
+    void disappear();
+    // 【新增】重写 draw 函数以实现淡出效果
+    void draw(QPainter* painter) override;
+
+signals:
+    // 【新增】动画播放完毕后，发射此信号通知外界
+    void disappeared();
+
 protected:
     // 动画相关
     QTimer* m_animationTimer;
     int m_currentFrameIndex;
     QList<QPixmap> m_movingFrames;
 
+    // 【新增】消失动画相关的成员变量
+    DisappearState m_disappearState;
+    QPixmap m_disappearPixmap;      // 消失效果的贴图（例如一团烟雾）
+    QTimer* m_fadeTimer;            // 驱动淡出效果的计时器
+    qreal m_opacity;                // 当前的透明度
+
 protected slots:
     // 动画帧更新的槽函数，子类可以复用
     virtual void updateAnimation();
+    // 【新增】更新淡出效果的槽函数
+    void updateFadeOut();
 };
 
 #endif // MOUNT_H

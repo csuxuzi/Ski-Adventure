@@ -17,10 +17,14 @@ class PauseDialog; // <-- 【新增】前向声明 PauseDialog
 class ImageButton; // <-- 【新增】前向声明 ImageButton
 class Avalanche;
 class GameOverDialog;
+class Tree;
+// --- 【在这里添加新行】 ---
+class CardSelectionDialog;
+
 class Mount;   // <-- 【新增】
 class Penguin; // <-- 【新增】
 class Yeti;    // <-- 【新增】
-
+class Coin;
 
 class GameScreen : public QWidget
 {
@@ -37,6 +41,8 @@ public:
     explicit GameScreen(QWidget *parent = nullptr);
     void startGame();
     void stopGame();
+    // 【新增】核心计分接口
+    void addScore(int baseScore);
 
     // 【新增】一个 public 的 getTerrainInfoAt, 以便雪崩对象可以调用
     QPair<QPointF, qreal> getTerrainInfoAt(qreal x_pos);
@@ -144,6 +150,8 @@ private:
     qreal m_lastSignboardGenX;
     qreal m_lastMountX = 0;;
 
+    int m_nextSignboardDistance; // 记录下一个告示牌的距离
+
     // 游戏实体
     Player* m_player;
     Avalanche* m_avalanche; // <-- 【新增】雪崩对象指针
@@ -156,13 +164,36 @@ private:
     ImageButton* m_pauseButton;
     PauseDialog* m_pauseDialog;
     GameOverDialog* m_gameOverDialog; // <-- 【新增】
+    // --- 【在这里添加新行】 ---
+    CardSelectionDialog* m_cardDialog;
+
     QList<Penguin*> m_penguins; // <-- 【新增】
     QList<Yeti*> m_yetis;       // <-- 【新增】
+    QList<Coin*> m_coins;
+
+    // 【新增】分数倍率
+    qreal m_scoreMultiplier;
+
 
     // --- 【新增】得分系统相关成员 ---
     QLabel* m_scoreLabel;                  // 用于显示分数的UI标签
     quint64 m_score;                       // 存储当前总分 (使用 quint64 防止溢出)
     qreal m_distanceTraveledForScore;      // 记录自上次加分后，玩家移动的距离
+
+    // 【新增】一个列表来管理所有的树
+    QList<Tree*> m_trees;
+    // 【新增】一个变量来记录上次种树的位置
+    qreal m_lastTreeX;
+
+    // 【新增】雪崩警告特效相关
+    QPixmap m_warningPixmap;        // 警告图片
+    bool m_isWarningVisible;        // 图片当前是否可见
+    qreal m_warningScale;           // 图片当前的缩放比例
+    qreal m_warningRotation;        // 图片当前的旋转角度
+    qreal m_rotationDirection;      // 旋转方向 (1 或 -1)
+    QTimer* m_warningDelayTimer; // <-- 【新增】换成这个可以完全控制的定时器
+
+    bool m_warningEnabled;
 };
 
 #endif // GAMESCREEN_H

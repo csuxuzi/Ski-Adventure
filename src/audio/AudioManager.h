@@ -44,6 +44,17 @@ public:
     void setSfxEnabled(bool enabled);
     void playSoundEffect(SfxType type);
 
+    // --- 【新增】音量控制接口 ---
+    void setMusicVolume(float volume); // volume is 0.0 to 1.0
+    void setSfxVolume(float volume);   // volume is 0.0 to 1.0
+
+
+    // --- 【新增】获取状态和音量的接口 ---
+    bool isMusicEnabled() const;
+    float getMusicVolume() const;
+    bool isSfxEnabled() const;
+    float getSfxVolume() const;
+
 private slots:
     // 【新增】用于处理BGM播放状态变化的槽函数
     void onBgmStatusChanged(QMediaPlayer::MediaStatus status);
@@ -62,7 +73,7 @@ private:
     AudioManager& operator=(const AudioManager&) = delete;
 
     QMediaPlayer* m_musicPlayer;
-    QAudioOutput* m_audioOutput;
+    QAudioOutput* m_musicAudioOutput;
     // 【修改】使用QList<QUrl>代替QMediaPlaylist
     QList<QUrl> m_mainMenuBgmList;
     QList<QUrl> m_gameBgmList;
@@ -82,6 +93,7 @@ private:
 
     bool m_musicEnabled;
     bool m_sfxEnabled;
+    float m_sfxVolume; // 【修改】确保这行存在，之前的文件里已经有了
 
 };
 

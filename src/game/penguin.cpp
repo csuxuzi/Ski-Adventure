@@ -25,6 +25,7 @@ Penguin::Penguin(QObject *parent)
         setScale(0.7); // 设置企鹅的尺寸
     }
 
+
     m_animationTimer = new QTimer(this);
     connect(m_animationTimer, &QTimer::timeout, this, &Penguin::updateAnimation);
     m_animationTimer->start(PENGUIN_ANIMATION_FRAME_RATE);

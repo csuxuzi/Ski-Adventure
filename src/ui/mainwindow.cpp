@@ -8,6 +8,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    setWindowIcon(QIcon(":/assets/images/app_icon.png"));
     setWindowTitle("Ski Adventure");
     //设置窗口大小：16/9
     setFixedSize(1280, 720);

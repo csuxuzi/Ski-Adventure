@@ -17,6 +17,7 @@ public:
         None,
         Penguin,
         Yeti,
+        BrokenYeti,
         Sleigh
         // 未来可在此添加 Sleigh
     };
@@ -33,12 +34,18 @@ public:
     void draw(QPainter* painter) override;
     explicit Player(QObject *parent = nullptr);
 
+    ///卡片相关接口
+    // --- 【在这里添加两个新函数】 ---
+    void applySpeedBonus(float bonus);
+    void applyJumpBonus(float bonus);
+
+
     // --- 【新增】获取当前速度大小的接口 ---
     qreal currentSpeed() const { return m_currentSpeed; }
 
     // 覆盖基类的 update 方法来实现玩家自己的逻辑
     void update() override;
-
+    void startInvincibility(); // <-- 【新增】声明新的私有函数
 
     // --- 【新增】骑乘系统的公共接口 ---
     void rideMount(MountType type, const QList<QPixmap>& mountFrames, qreal newSpeed, qreal newGravity);
@@ -74,6 +81,7 @@ private:
     QList<QPixmap> m_standingUpFrames; // <-- 【新增】站立动画帧列表
 
     QPixmap m_ridingYetiPixmap;      // 新增：存放骑乘雪怪的静态图
+    QPixmap m_ridingBrokenYetiPixmap; // <-- 新增：存放损坏雪怪的静态图
     QPixmap m_ridingPenguinPixmap;   // 新增：存放骑乘企鹅的静态图
 
     // --- 【新增】坐骑动画相关成员 ---
@@ -87,13 +95,23 @@ private:
     // --- 新增：根据当前状态切换动画的辅助函数 ---
     void setCurrentAnimation(PlayerState state);
 
+
     // --- 摔倒逻辑相关成员 ---
     QTimer* m_crashStateTimer;       // <-- 【新增】用于计算5秒摔倒时间的计时器
     qreal m_crashTimeRemaining;      // <-- 【新增】剩余摔倒时间
     int m_crashInitialLoopCount;   // <-- 【新增】记录前5帧播放次数
+    // --- 【新增】将无敌时间定义为常量，方便调整 ---
+    int INVINCIBILITY_DURATION_MS; // 默认1.5秒
     // --- 【新增】速度控制相关成员 ---
     qreal m_baseSpeed;      // 角色的基础速度，用于重置
     qreal m_currentSpeed;   // 角色当前的实际速度大小
+    // --- 【在这里添加一个新变量】 ---
+    qreal m_jumpForce; // 用于存储当前跳跃力
+
+    // 【新增】无敌光环特效相关
+    QPixmap m_invincibleEffectPixmap; // 光环的图片
+    qreal m_invincibleEffectOpacity;  // 光环当前的透明度 (0.0 到 1.0)
+    bool m_isFadingIn;                // 一个开关，true代表正在淡入，false代表正在淡出
 };
 
 #endif // PLAYER_H

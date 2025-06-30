@@ -12,13 +12,13 @@ AudioManager* AudioManager::instance()
 }
 
 AudioManager::AudioManager(QObject *parent)
-    : QObject(parent), m_musicPlayer(new QMediaPlayer(this)), m_audioOutput(new QAudioOutput(this)),
+    : QObject(parent), m_musicPlayer(new QMediaPlayer(this)), m_musicAudioOutput(new QAudioOutput(this)),
       m_musicEnabled(true), m_sfxEnabled(true),
         m_gameBgmIndex(0),
         m_currentBgm(BgmType::MainMenu)
 {
     // 配置背景音乐播放器
-    m_musicPlayer->setAudioOutput(m_audioOutput);
+    m_musicPlayer->setAudioOutput(m_musicAudioOutput);
 
     // 【核心】在构造函数中，一次性加载所有音效到内存
     loadBgmLists();
@@ -84,7 +84,7 @@ void AudioManager::loadAllSoundEffects()
         effect->setSource(QUrl(path));
 
         // 设置默认音量，循环次数等，这些设置也会被保留
-        effect->setVolume(0.8);
+        effect->setVolume(m_sfxVolume);
         effect->setLoopCount(1);
 
         // 将加载好的音效对象存入 Map，以便随时使用
@@ -163,9 +163,55 @@ void AudioManager::setSfxEnabled(bool enabled)
     m_sfxEnabled = enabled;
     // 未来在这里处理音效的逻辑
     // 如果禁用音效，可以停止所有正在播放的音效
-    if (!enabled) {
-        for (QSoundEffect* effect : qAsConst(m_soundEffects)) {
-            effect->stop();
-        }
+    // if (!enabled) {
+    //     for (QSoundEffect* effect : qAsConst(m_soundEffects)) {
+    //         effect->stop();
+    //     }
+    // }
+}
+
+
+// --- 【在这里添加以下四个新函数】 ---
+
+void AudioManager::setMusicVolume(float volume)
+{
+    if (volume < 0.0f) volume = 0.0f;
+    if (volume > 1.0f) volume = 1.0f;
+
+    // 直接设置 QAudioOutput 的音量，它控制所有BGM
+    m_musicAudioOutput->setVolume(volume);
+
+    // 如果音量从0变为非0，且音乐开关是开的，就尝试播放当前BGM
+    if (volume > 0 && m_musicEnabled && m_musicPlayer->playbackState() != QMediaPlayer::PlayingState) {
+        playBgm(m_currentBgm);
     }
+    // 如果音量降为0，则停止音乐
+    else if (volume == 0.0f) {
+        stopMusic();
+    }
+}
+
+void AudioManager::setSfxVolume(float volume)
+{
+    if (volume < 0.0f) volume = 0.0f;
+    if (volume > 1.0f) volume = 1.0f;
+
+    m_sfxVolume = volume; // 存储音量值
+
+    // 遍历所有的音效，并设置它们的音量
+    for (QSoundEffect* effect : qAsConst(m_soundEffects)) {
+        effect->setVolume(m_sfxVolume);
+    }
+}
+
+// 获取当前音乐音量
+float AudioManager::getMusicVolume() const
+{
+    return m_musicAudioOutput->volume();
+}
+
+// 获取当前音效音量
+float AudioManager::getSfxVolume() const
+{
+    return m_sfxVolume;
 }

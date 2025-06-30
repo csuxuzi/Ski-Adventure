@@ -19,6 +19,7 @@ Yeti::Yeti(QObject *parent)
         }
     }
 
+
     // 2. 初始化动画系统
     if (!m_movingFrames.isEmpty()) {
         m_originalPixmap = m_movingFrames.first();

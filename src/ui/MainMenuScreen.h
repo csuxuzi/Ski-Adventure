@@ -1,6 +1,6 @@
 #ifndef MAINMENUSCREEN_H
 #define MAINMENUSCREEN_H
-
+#include <QPixmap> // 【新增】包含 QPixmap
 #include <QWidget>
 #include <QResizeEvent>
 class QGraphicsView;
@@ -32,9 +32,14 @@ private:
     void startAvalancheAnimation();
 
     // 场景相关
-    QGraphicsView* m_view;
-    QGraphicsScene* m_scene;
-
+    // QGraphicsView* m_view;
+    // QGraphicsScene* m_scene;
+    // --- 【新增】用于存放主界面图片的成员变量 ---
+    QPixmap m_characterPixmap;
+    QPixmap m_signboardPixmap;
+    QPixmap m_postPixmap;
+    QPixmap m_gameTitlePixmap;
+    QPixmap m_housePixmap;
     // UI 元素
     ImageButton* m_startButton;
 
@@ -49,6 +54,7 @@ private:
     bool m_isDrawerOpen = false;
 protected:
     void resizeEvent(QResizeEvent *event) override;
+    void paintEvent(QPaintEvent* event) override;
 };
 
 

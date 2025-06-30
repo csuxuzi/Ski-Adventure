@@ -35,6 +35,14 @@ add_executable(SkiAdventure
     src/game/mount.h src/game/mount.cpp
     src/game/penguin.h src/game/penguin.cpp
     src/game/yeti.h src/game/yeti.cpp
+    src/game/coin.h src/game/coin.cpp
+    src/fx/EffectManager.h src/fx/EffectManager.cpp
+    src/game/cardeffects.h
+    src/ui/cardwidget.h src/ui/cardwidget.cpp
+    src/ui/cardselectiondialog.h src/ui/cardselectiondialog.cpp
+    src/ui/helpdialog.h src/ui/helpdialog.cpp
+    src/game/tree.h src/game/tree.cpp
+    src/ui/imagedisplaydialog.h src/ui/imagedisplaydialog.cpp
 )
 
 
@@ -57,6 +65,10 @@ target_sources(SkiAdventure PRIVATE
     src/game/seesaw.h
     src/game/avalanche.h
     src/ui/gameoverdialog.h
+    src/fx/EffectManager.h
+    src/game/penguin.h
+    src/game/yeti.h
+    src/game/coin.h
     # 源文件 (.cpp)
     src/ui/MainWindow.cpp
     src/ui/MainMenuScreen.cpp
@@ -67,11 +79,15 @@ target_sources(SkiAdventure PRIVATE
     src/game/stone.cpp
     src/game/Player.cpp
     src/game/house.cpp
+    src/game/penguin.cpp
+    src/game/coin.cpp
+    src/game/yeti.cpp
     src/ui/ImageButton.cpp         # <-- 【新增行】
     src/ui/PlaceholderDialog.cpp   # <-- 【新增行】
     src/game/seesaw.cpp
     src/game/avalanche.cpp
     src/ui/gameoverdialog.cpp
+    src/fx/EffectManager.cpp
 
     # 资源文件 (.qrc)
     resources.qrc

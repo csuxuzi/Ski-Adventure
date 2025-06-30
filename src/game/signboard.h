@@ -19,6 +19,7 @@ public:
 
     explicit Signboard(QObject *parent = nullptr);
 
+    void setDistance(int distance);//显示滑行距离
     QPainterPath getBoardPath() const;
     void shatter(const QPointF& point);
     void draw(QPainter* painter) override;
@@ -34,6 +35,7 @@ private:
     QTimer* m_shatterTimer;
     qreal m_shatterOpacity;
     QPointF m_shatterPosition;
+    int m_distance; // 用于存储距离
 };
 
 #endif // SIGNBOARD_H
