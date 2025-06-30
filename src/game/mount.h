@@ -22,6 +22,9 @@ public:
     // 纯虚函数，强制子类实现自己的物理更新
     virtual void update() override = 0;
 
+    // --- 【新增】返回动画帧列表的公共接口 ---
+    const QList<QPixmap>& getAnimationFrames() const { return m_movingFrames; }
+
     // --- 公共状态 ---
     RidingState currentState;
     bool onGround;

@@ -3,7 +3,6 @@
 
 #include <QPushButton>
 #include <QPixmap>
-
 class ImageButton : public QPushButton
 {
     Q_OBJECT

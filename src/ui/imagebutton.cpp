@@ -1,6 +1,6 @@
 #include "ui/ImageButton.h"
 #include <QBitmap>
-
+#include "audio/AudioManager.h"
 ImageButton::ImageButton(const QString &imagePath, QWidget *parent)
     : QPushButton(parent), m_pixmap(imagePath)
 {
@@ -12,6 +12,11 @@ ImageButton::ImageButton(const QString &imagePath, QWidget *parent)
 
     // 关键：设置遮罩，让按钮的点击区域和图片的不透明区域完全一样
     setMask(m_pixmap.mask());
+
+    // 【新增】连接点击信号，播放音效
+    connect(this, &QPushButton::clicked, this, []() {
+        AudioManager::instance()->playSoundEffect(SfxType::ButtonClick);
+    });
 }
 void ImageButton::updateIcon(const QPixmap &pixmap)
 {

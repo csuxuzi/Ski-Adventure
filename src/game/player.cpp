@@ -1,8 +1,9 @@
 #include "game/Player.h"
 #include <QDebug>
 #include <QTimer>
+#include "audio/AudioManager.h"
 // 定义一些物理常量，方便调整
-const qreal GRAVITY = 0.6;         // 重力加速度
+const qreal GRAVITY = 0.5;         // 重力加速度
 const qreal JUMP_FORCE = -16.5;    // 向上的跳跃冲力 (Y轴向上为负)
 const int ANIMATION_FRAME_RATE = 50; // 动画帧率，单位：毫秒 (50ms = 20 FPS)
 // ... 在构造函数顶部，定义常量
@@ -18,6 +19,29 @@ Player::Player(QObject *parent) : GameObject(parent)
     m_crashInitialLoopCount(0)
 {
     // --- 1. 加载所有动画帧 ---
+    // --- 【新增】初始化速度 ---
+    m_baseSpeed = 12.5; // 设置一个基础速度值
+    m_currentSpeed = m_baseSpeed; // 初始时，当前速度等于基础速度
+
+    // --- 【新增】初始化坐骑和重力相关变量 ---
+    m_mountFrameIndex = 0;
+    m_currentMount = None;
+    m_currentGravity = GRAVITY; // 初始重力使用默认值
+
+    // --- 【新增】初始化坐骑动画计数器 ---
+    m_mountAnimCounter = 0;
+
+
+    // 假设您的图片名为 ride_yeti.png
+    if (!m_ridingYetiPixmap.load(":/assets/images/player/ride_yeti.png")) {
+        qWarning() << "Failed to load yeti riding pixmap!";
+    }
+
+    // 【新增】加载“骑乘企鹅”的静态图片
+    // 假设您的图片名为 ride_penguin.png
+    if (!m_ridingPenguinPixmap.load(":/assets/images/player/ride_penguin.png")) {
+        qWarning() << "Failed to load penguin riding pixmap!";
+    }
 
     // 加载滑行动画（假设只有一张图片）
     QPixmap slidePixmap;
@@ -83,6 +107,24 @@ Player::Player(QObject *parent) : GameObject(parent)
 
 }
 
+
+// 【新增】在 player.cpp 文件中添加这个新函数
+void Player::rideMount(MountType type, const QList<QPixmap>& mountFrames, qreal newSpeed, qreal newGravity)
+{
+    m_currentMount = type;
+    m_mountAnimationFrames = mountFrames; // 复制坐骑的动画帧
+    m_mountFrameIndex = 0;
+
+    // 应用坐骑带来的新速度和新重力
+    m_currentSpeed = newSpeed;
+    m_currentGravity = newGravity;
+
+    // 确保动画计时器在运行以播放坐骑动画
+    if (!m_animationTimer->isActive()) {
+        m_animationTimer->start(ANIMATION_FRAME_RATE);
+    }
+}
+
 void Player::update()
 {
 
@@ -96,9 +138,14 @@ void Player::update()
     // --- 1. 应用重力 ---
     // 只要不在地面上，就持续施加重力
     if (!onGround) {
-        m_velocity.setY(m_velocity.y() + GRAVITY);
+        // 【修改】使用 m_currentGravity 而不是固定的 GRAVITY
+        m_velocity.setY(m_velocity.y() + m_currentGravity);
     }
 
+    // 3. 【核心】将速度矢量归一化，然后乘以当前速度大小
+    //    这确保了无论方向如何，速度的总大小始终为 m_currentSpeed
+    m_velocity.normalize();
+    m_velocity *= m_currentSpeed;
 
     // --- 2. 根据速度更新位置 ---
     m_position += m_velocity.toPointF();
@@ -196,6 +243,44 @@ void Player::setCurrentAnimation(PlayerState state)
 // --- 新增：更新动画帧的槽函数 ---
 void Player::updateAnimation()
 {
+
+    // --- 【新增】如果玩家正在骑乘，则优先更新坐骑的动画 ---
+    // if (isMounted()) {
+    //     if (!m_mountAnimationFrames.isEmpty()) {
+    //         m_mountFrameIndex = (m_mountFrameIndex + 1) % m_mountAnimationFrames.size();
+    //     }
+    //     // 此时，玩家自身的动画可以强制为“骑乘姿势”（这里我们用滑行帧代替）
+    //     if (!m_slidingFrames.isEmpty()) {
+    //         m_originalPixmap = m_slidingFrames.first();
+    //         setScale(0.8);
+    //     }
+    //     return; // 处理完坐骑动画后直接返回
+    // }
+    // 如果没骑坐骑，或者骑着坐骑但在空中（跳跃/下落），则正常播放玩家自己的动画
+    if (!isMounted() || (isMounted() && !onGround)) {
+        // 【重要】确保计时器在运行，以便播放跳跃/下落动画
+        if (!m_animationTimer->isActive()) {
+            m_animationTimer->start(ANIMATION_FRAME_RATE);
+        }
+    } else if (isMounted() && onGround) {
+        // --- 【特殊规则】如果骑着坐骑并且在地面上（滑行），则定格玩家动画 ---
+        // 1. 直接使用滑行状态的最后一帧作为骑乘姿势
+        if (!m_slidingFrames.isEmpty()) {
+            m_originalPixmap = m_slidingFrames.first(); // 用第一帧或最后一帧都可以
+            setScale(0.8);
+        }
+        // 【核心】根据坐骑类型，把玩家的图换成对应的静态骑行姿势
+        // if (m_currentMount == Yeti) {
+        //     m_originalPixmap = m_ridingYetiPixmap;
+        // } else if (m_currentMount == Penguin) {
+        //     m_originalPixmap = m_ridingPenguinPixmap;
+        // }
+        // 2.【重要】停止计时器，让玩家动画不再更新
+        m_animationTimer->stop();
+        return; // 直接返回，不执行下面的逻辑
+    }
+
+
     const QList<QPixmap>* currentFrames = nullptr;
     int frameOffset = 0; // 用于截取动画序列
     int frameCount = 0;
@@ -279,19 +364,93 @@ void Player::updateAnimation()
 
 }
 
+// 【新增】在 player.cpp 中实现 Player 专属的 draw 函数
+void Player::draw(QPainter* painter)
+{
+    // 如果没有骑乘坐骑，就直接调用基类（GameObject）的默认绘制方法
+    if (!isMounted()) {
+        GameObject::draw(painter);
+        return;
+    }
+
+    // 1. 每次绘制时，计数器加1
+    m_mountAnimCounter++;
+
+    int animation_speed_divider = 5; // 默认值
+    if (m_currentMount == Penguin) {
+        animation_speed_divider = 8; // 让企鹅的动画慢一点
+    } else if (m_currentMount == Yeti) {
+        animation_speed_divider = 4; // 让雪怪的动画快一点
+    }
+    // 3. 只有当计数器达到我们设定的值时，才更新动画帧
+    if (m_mountAnimCounter >= animation_speed_divider) {
+        m_mountAnimCounter = 0; // 重置计数器
+        if (!m_mountAnimationFrames.isEmpty()) {
+            m_mountFrameIndex = (m_mountFrameIndex + 1) % m_mountAnimationFrames.size();
+        }
+    }
+
+    // --- 如果正在骑乘，则执行特殊的组合绘制逻辑 ---
+    painter->save();
+    painter->translate(m_position);
+    painter->rotate(m_rotation);
+
+    // 1. 绘制坐骑的当前动画帧
+    if (!m_mountAnimationFrames.isEmpty()) {
+        const QPixmap& mountPixmap = m_mountAnimationFrames[m_mountFrameIndex];
+        // 坐骑的锚点在脚底中心，所以绘制时向上、向左偏移
+        QPointF mountDrawPos(-mountPixmap.width() / 2.0, -mountPixmap.height());
+        painter->drawPixmap(mountDrawPos, mountPixmap);
+
+        // 2. 在坐骑的“背上”绘制玩家
+        //    这个偏移量需要根据您的美术资源仔细调整
+        QPointF playerOffset; // 举例：玩家Y坐标在坐骑高度70%的位置
+        qreal playerExtraRotation = 0.0; // 玩家的额外旋转
+
+        if (m_currentMount == Yeti) {
+            // --- 雪怪的设置 ---
+            playerOffset = QPointF(4, -mountPixmap.height() * 0.35); // 向右偏移15像素，位置更高
+            playerExtraRotation = -50.0;                              // 身体前倾8度
+        }
+        else if (m_currentMount == Penguin) {
+            // --- 企鹅的设置 ---
+            playerOffset = QPointF(0, -mountPixmap.height() * 0.45); // 向左偏移5像素，位置更低
+            playerExtraRotation = 5.0;                               // 身体后仰5度
+        }
+
+        // d. 绘制玩家（应用上面定义的专属微调）
+        painter->save(); // 保存坐骑的坐标系状态
+        painter->translate(playerOffset);          // 应用位置偏移
+        painter->rotate(playerExtraRotation);      // 应用额外旋转
+
+        // m_pixmap 中保存着玩家当前应该显示的帧（例如“滑行”或“骑乘”姿势）
+        const QPixmap& playerPixmap = m_pixmap;
+        QPointF playerDrawPos = playerOffset - QPointF(playerPixmap.width() / 2.0, playerPixmap.height());
+        painter->drawPixmap(playerDrawPos, playerPixmap);
+
+        painter->restore(); // 恢复到坐骑的坐标系
+    }
+
+    painter->restore();
+}
+
 void Player::crash()
 {
     // 只有在非摔倒相关状态时才能触发
     if (currentState != Crashing && currentState != StandingUp) {
         currentState = Crashing;
         isInvincible = true; // 进入无敌状态
+        // --- 【核心修改】在这里同时修改核心速度和当前速度矢量 ---
+        m_currentSpeed = 2.5; // 1. 把核心速度属性降下来
+        setVelocity(QVector2D(m_currentSpeed, 0)); // 2. 用新的低速来设置当前的速度矢量
 
         m_crashInitialLoopCount = 0; // 重置“前5帧”的播放计数
         m_crashTimeRemaining = CRASH_DURATION_MS; // 设置总摔倒时间
         m_crashStateTimer->start(100); // 每100ms检查一次时间
-
+        // 【新增】播放摔倒音效
+        AudioManager::instance()->playSoundEffect(SfxType::PlayerCrash);
         setCurrentAnimation(Crashing);
-        setVelocity(QVector2D(2.5, 0)); /// 摔倒后速度清零
+        //setVelocity(QVector2D(2.5, 0)); /// 摔倒后速度清零
     }
 }
 
@@ -310,5 +469,7 @@ void Player::handleCrashTimeout()
         m_crashStateTimer->stop();
         currentState = StandingUp;
         setCurrentAnimation(StandingUp);
+        // --- 【新增】在站起来后，恢复基础速度 ---
+        m_currentSpeed = m_baseSpeed;
     }
 }

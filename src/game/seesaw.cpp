@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QTransform>
 #include <QTimer>
-
+#include "audio/AudioManager.h"
 // 定义破碎动画的常量
 const int SHATTER_FADE_STEP_DURATION_SEESAW = 50;
 const qreal SHATTER_OPACITY_STEP_SEESAW = 0.05;
@@ -65,6 +65,8 @@ void Seesaw::shatter(const QPointF& point)
         m_shatterPosition = point;
         m_shatterOpacity = 1.0;
         m_shatterTimer->start(SHATTER_FADE_STEP_DURATION_SEESAW);
+        // 【新增】播放翘板破碎音效
+        AudioManager::instance()->playSoundEffect(SfxType::SeesawShatter);
     }
 }
 

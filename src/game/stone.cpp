@@ -1,7 +1,7 @@
 #include "game/Stone.h"
 #include <QTimer>
 #include <QDebug>
-
+#include "audio/AudioManager.h"
 // 破碎图片显示的时间 (毫秒)
 const int SHATTER_DURATION = 500;
 // 淡出效果每步之间的时间间隔 (毫秒)
@@ -40,6 +40,8 @@ void Stone::shatter()
 {
     if (currentState == Intact) {
         currentState = FadingOut;
+        // 【新增】播放石头破碎音效
+        AudioManager::instance()->playSoundEffect(SfxType::StoneShatter);
         m_fadeTimer->start(FADE_STEP_DURATION); // 启动淡出计时器
     }
 }

@@ -17,7 +17,9 @@ MainWindow::MainWindow(QWidget *parent)
     createConnections();
 
     // 启动背景音乐
-    AudioManager::instance()->playMainMenuMusic();
+    // AudioManager::instance()->playMainMenuMusic();
+    // 【修改】启动主菜单的背景音乐
+    AudioManager::instance()->playBgm(BgmType::MainMenu);
 }
 
 MainWindow::~MainWindow() {}
@@ -53,6 +55,8 @@ void MainWindow::showMainMenu()
 {
     m_stackedWidget->setCurrentWidget(m_mainMenuScreen);
     m_mainMenuScreen->resetUI(); // <-- 【新增】调用UI重置函数
+
+    AudioManager::instance()->playBgm(BgmType::MainMenu);
 }
 
 void MainWindow::showSettings()
@@ -64,6 +68,7 @@ void MainWindow::showSettings()
 void MainWindow::startGame()
 {
     // 这里是占位符，后续将切换到游戏界面
+    AudioManager::instance()->playBgm(BgmType::GameScreen);
     qDebug() << "Start Game button clicked! Should switch to game screen.";
     // m_stackedWidget->setCurrentWidget(m_gameScreen);
     // // 让游戏界面开始自己的游戏循环

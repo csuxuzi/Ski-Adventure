@@ -2,6 +2,7 @@
 #include <QPainter>
 #include <QDebug>
 #include <QTimer> // <-- 【新增】包含 QTimer 头文件
+#include "audio/AudioManager.h"
 // --- 【新增】定义破碎动画的常量 ---
 const int SHATTER_FADE_STEP_DURATION = 50; // 淡出效果每步之间的时间间隔 (毫秒)
 const qreal SHATTER_OPACITY_STEP = 0.05;   // 每次降低多少透明度
@@ -82,6 +83,8 @@ void House::shatter(const QPointF& point)
         m_shatterPosition = point;       // 记录碰撞点
         m_shatterOpacity = 1.0;          // 重置透明度为完全不透明
         m_shatterTimer->start(SHATTER_FADE_STEP_DURATION); // 启动淡出动画
+        // 【新增】播放房屋破碎音效
+        AudioManager::instance()->playSoundEffect(SfxType::HouseShatter);
     }
 }
 // --- 【新增】实现获取屋顶左右底角世界坐标的函数 ---

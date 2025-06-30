@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QTransform>
 #include <QTimer>
-
+#include "audio/AudioManager.h"
 const int SHATTER_FADE_STEP_DURATION_SIGN = 50;
 const qreal SHATTER_OPACITY_STEP_SIGN = 0.05;
 
@@ -55,6 +55,8 @@ void Signboard::shatter(const QPointF& point)
         m_shatterPosition = point;
         m_shatterOpacity = 1.0;
         m_shatterTimer->start(SHATTER_FADE_STEP_DURATION_SIGN);
+        // 【新增】播放破碎音效 (复用翘板的)
+        AudioManager::instance()->playSoundEffect(SfxType::SeesawShatter);
     }
 }
 

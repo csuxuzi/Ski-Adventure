@@ -5,7 +5,7 @@
 #include <QPixmap>
 #include <QPainterPath>
 #include <QQueue> // <-- 【新增】包含 QQueue 头文件
-
+#include <QLabel>
 class QTimer;
 class GameObject; // 前向声明
 class Player;     // 前向声明
@@ -158,6 +158,11 @@ private:
     GameOverDialog* m_gameOverDialog; // <-- 【新增】
     QList<Penguin*> m_penguins; // <-- 【新增】
     QList<Yeti*> m_yetis;       // <-- 【新增】
+
+    // --- 【新增】得分系统相关成员 ---
+    QLabel* m_scoreLabel;                  // 用于显示分数的UI标签
+    quint64 m_score;                       // 存储当前总分 (使用 quint64 防止溢出)
+    qreal m_distanceTraveledForScore;      // 记录自上次加分后，玩家移动的距离
 };
 
 #endif // GAMESCREEN_H
