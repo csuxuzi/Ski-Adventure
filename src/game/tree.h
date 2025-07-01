@@ -11,6 +11,7 @@ public:
 
     // 树是静态的，不需要每帧更新，但需要保留这个空函数
     void update() override;
+    void draw(QPainter* painter) override;
 };
 
 #endif // TREE_H

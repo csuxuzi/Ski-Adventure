@@ -10,7 +10,6 @@
         <file>drawer_arrow_close.png</file>
         <file>drawer_arrow_open.png</file>
         <file>house.png</file>
-        <file>game_background.png</file>
         <file>player.png</file>
         <file>stone_large.png</file>
         <file>stone_small.png</file>
@@ -48,6 +47,7 @@
         <file>dashBoard.png</file>
         <file>leftDoor.png</file>
         <file>sleepPlayer.png</file>
+        <file>game_background.png</file>
     </qresource>
     <qresource prefix="/assets/audio/music">
         <file>main_menu.mp3</file>

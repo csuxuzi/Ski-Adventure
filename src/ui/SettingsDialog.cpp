@@ -48,7 +48,7 @@ void SettingsDialog::setupUI()
     m_musicSlider->setRange(0, 100);
     m_sfxSlider->setRange(0, 100);
 
-    QLabel* musicLabel = new QLabel("背景音乐", this);
+    QLabel* musicLabel = new QLabel("音乐", this);
     QLabel* sfxLabel = new QLabel("音效", this);
     musicLabel->setStyleSheet("font-size: 16px;");
     sfxLabel->setStyleSheet("font-size: 16px;");

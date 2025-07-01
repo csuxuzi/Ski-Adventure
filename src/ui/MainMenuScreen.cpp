@@ -13,23 +13,30 @@
 #include "ui/ImageDisplayDialog.h" // <-- 【在这里添加新行】
 MainMenuScreen::MainMenuScreen(QWidget *parent) : QWidget(parent)
 {
-    // //setupScene();//初始化游戏的背景场景（如背景图、
-    // setupUI();//初始化用户界面的元素（如开始按钮、抽屉菜单等）。
 
-    // // 将 QGraphicsView 作为此 Widget 的主要布局
-    // QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    // mainLayout->setContentsMargins(0, 0, 0, 0);
-    // mainLayout->addWidget(m_view);
-    // setLayout(mainLayout);
+    setupUI();
+
+    // 2. 【第二步】现在所有按钮和控件都已经被创建好了，我们再来初始化动画
+    m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
+    m_drawerAnimation->setDuration(300);
+    m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
 
     // // 连接开始游戏按钮的信号
     // connect(m_startButton, &QPushButton::clicked, this, &MainMenuScreen::startAvalancheAnimation);
     // 不再需要 QGraphicsScene，直接设置UI
-    setupUI();
+    m_buttonAnimation = new QPropertyAnimation(m_toggleButton, "pos", this);
+    m_buttonAnimation->setDuration(300);
+    m_buttonAnimation->setEasingCurve(QEasingCurve::InOutCubic);
 
-    // 连接信号
+
+
+    // 3. 【第三步】最后再把所有信号和槽连接起来
     connect(m_startButton, &QPushButton::clicked, this, &MainMenuScreen::startAvalancheAnimation);
-
+    connect(m_toggleButton, &QPushButton::clicked, this, &MainMenuScreen::toggleDrawer);
+    connect(m_settingsButton, &QPushButton::clicked, this, &MainMenuScreen::settingsClicked);
+    connect(m_helpButton, &QPushButton::clicked, this, &MainMenuScreen::showHelp);
+    connect(m_recordsButton, &QPushButton::clicked, this, &MainMenuScreen::showRecords);
+    connect(m_highscoreButton, &QPushButton::clicked, this, &MainMenuScreen::showHighscore);
 }
 
 // // 【新增】实现 resetUI 函数
@@ -126,7 +133,10 @@ void MainMenuScreen::setupUI()
     // 抽屉的容器
     m_drawerContainer = new QWidget(this);
     m_drawerContainer->setStyleSheet("background-image: url(:/assets/images/drawer_background.png);");
+    ///创建用于打开/关闭抽屉的箭头按钮。
+    m_toggleButton = new ImageButton(":/assets/images/drawer_arrow_open.png", this);
 
+    m_drawerButtonOpenPos = QPoint(m_drawerContainer->width() + 10, m_toggleButton->y()); // 抽屉宽度 + 间距
     // 抽屉内的按钮
     // ImageButton* helpBtn = new ImageButton(":/assets/images/btn_help.png", m_drawerContainer);
     // ImageButton* recordsBtn = new ImageButton(":/assets/images/btn_records.png", m_drawerContainer);
@@ -158,24 +168,22 @@ void MainMenuScreen::setupUI()
 
     // 将抽屉的初始位置放在屏幕外
     // m_drawerContainer->move(10, this->height());
-    ///创建用于打开/关闭抽屉的箭头按钮。
-    m_toggleButton = new ImageButton(":/assets/images/drawer_arrow_open.png", this);
 
     // --- 【新增修复】在这里只创建一次动画对象 ---
-    m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
-    m_drawerAnimation->setDuration(300);
-    m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
+    // m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
+    // m_drawerAnimation->setDuration(300);
+    // m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
 
     // --- 3. 连接抽屉内按钮的信号 ---
     // connect(settingsBtn, &QPushButton::clicked, this, &MainMenuScreen::settingsClicked);
     // connect(helpBtn, &QPushButton::clicked, this, &MainMenuScreen::showHelp);
     // connect(recordsBtn, &QPushButton::clicked, this, &MainMenuScreen::showRecords);
     // connect(highscoreBtn, &QPushButton::clicked, this, &MainMenuScreen::showHighscore);
-    connect(m_toggleButton, &QPushButton::clicked, this, &MainMenuScreen::toggleDrawer);
-    connect(m_settingsButton, &QPushButton::clicked, this, &MainMenuScreen::settingsClicked);
-    connect(m_helpButton, &QPushButton::clicked, this, &MainMenuScreen::showHelp);
-    connect(m_recordsButton, &QPushButton::clicked, this, &MainMenuScreen::showRecords);
-    connect(m_highscoreButton, &QPushButton::clicked, this, &MainMenuScreen::showHighscore);
+    // connect(m_toggleButton, &QPushButton::clicked, this, &MainMenuScreen::toggleDrawer);
+    // connect(m_settingsButton, &QPushButton::clicked, this, &MainMenuScreen::settingsClicked);
+    // connect(m_helpButton, &QPushButton::clicked, this, &MainMenuScreen::showHelp);
+    // connect(m_recordsButton, &QPushButton::clicked, this, &MainMenuScreen::showRecords);
+    // connect(m_highscoreButton, &QPushButton::clicked, this, &MainMenuScreen::showHighscore);
 
 }
 
@@ -264,15 +272,20 @@ void MainMenuScreen::toggleDrawer()
 
     // 2. 根据当前状态，设置动画的起始点和终点
     int startX, endX;
+    QPoint buttonStartPos, buttonEndPos;
     if (m_isDrawerOpen) {
         // 配置 "关闭" 动画
         startX = m_toggleButton->pos().x();
         endX = -m_drawerContainer->width();
+        buttonStartPos = m_toggleButton->pos();
+        buttonEndPos = QPoint(10, m_toggleButton->y()); // 恢复到初始位置
         m_toggleButton->updateIcon(QPixmap(":/assets/images/drawer_arrow_open.png"));
     } else {
         // 配置 "打开" 动画
         startX = -m_drawerContainer->width();
         endX = m_toggleButton->pos().x();
+        buttonStartPos = m_toggleButton->pos();
+        buttonEndPos = m_drawerButtonOpenPos;
         m_toggleButton->updateIcon(QPixmap(":/assets/images/drawer_arrow_close.png"));
     }
 
@@ -281,6 +294,10 @@ void MainMenuScreen::toggleDrawer()
 
     // 3. 启动动画 (不再使用 DeleteWhenStopped，也不再有 connect)
     m_drawerAnimation->start();
+
+    m_buttonAnimation->setStartValue(buttonStartPos);
+    m_buttonAnimation->setEndValue(buttonEndPos);
+    m_buttonAnimation->start();
 
     // 4. 切换状态
     m_isDrawerOpen = !m_isDrawerOpen;
@@ -299,10 +316,11 @@ void MainMenuScreen::toggleDrawer()
 void MainMenuScreen::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
+
     m_startButton->move(this->width() - m_startButton->width() - 20,
                         this->height() - m_startButton->height() - 20);
     m_toggleButton->move(10, this->height() - m_toggleButton->height() - 10);
-
+    m_drawerButtonOpenPos = QPoint(m_drawerContainer->width() + 10, m_toggleButton->y());
     // 抽屉的位置会在 toggleDrawer 中被设置，这里无需处理
 }
 
@@ -377,8 +395,8 @@ void MainMenuScreen::paintEvent(QPaintEvent* event)
     QLinearGradient snowGradient(snowRect.topLeft(), snowRect.bottomLeft());
     // b. 设置渐变的颜色
     //    我们让雪地的上边缘（远处）带一点淡蓝色，下边缘（近处）是纯白色
-    snowGradient.setColorAt(0.0, QColor("#E6E6FA")); // 上方颜色 (淡紫色/淡蓝色)
-    snowGradient.setColorAt(1.0, QColor("#FFFFFF")); // 下方颜色 (纯白色)
+    snowGradient.setColorAt(0.0, QColor("#ffffff")); // 上方颜色 (淡紫色/淡蓝色)
+    snowGradient.setColorAt(1.0, QColor("#082843")); // 下方颜色 (纯白色)
     // c. 使用这个渐变来填充矩形
     painter.fillRect(snowRect, snowGradient);
 

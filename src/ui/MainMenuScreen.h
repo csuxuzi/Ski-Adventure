@@ -42,6 +42,8 @@ private:
     QPixmap m_housePixmap;
     // UI 元素
     ImageButton* m_startButton;
+    QPropertyAnimation* m_buttonAnimation;
+    QPoint m_drawerButtonOpenPos;
 
     // 抽屉菜单相关
     QWidget* m_drawerContainer;

@@ -40,7 +40,7 @@ const qreal AVALANCHE_SPEED_MULTIPLIER = 0.6;  // 雪崩初始速度是玩家的
 
 // 坐骑相关
 const qreal PENGUIN_INITIAL_SPEED = 8.0; // 企鹅的初始速度
-const qreal YETI_INITIAL_SPEED = 5.5;    // 雪怪的初始速度
+const qreal YETI_INITIAL_SPEED = 10.5;    // 雪怪的初始速度
 // --- 【新增】定义角色骑上坐骑后的新速度 ---
 const qreal PLAYER_SPEED_ON_PENGUIN = 15.0; // 角色骑上企鹅后的速度
 const qreal PLAYER_SPEED_ON_YETI = 20.0;    // 角色骑上雪怪后的速度
@@ -48,8 +48,7 @@ const qreal PLAYER_SPEED_ON_YETI = 20.0;    // 角色骑上雪怪后的速度
 const qreal PLAYER_GRAVITY_ON_PENGUIN = 0.3; // 角色骑上企鹅后的速度
 const qreal PLAYER_GRAVITY_ON_YETI = 0.8;    // 角色骑上雪怪后的速度
 // 视觉效果相关
-const qreal BACKGROUND_SCROLL_SPEED = 0.5; // 背景的视差滚动速度
-// 【新增】定义企鹅和雪怪的最大数量上限，您可以根据需要调整这两个值
+const qreal BACKGROUND_SCROLL_RATIO = 0.1; // 【修改】背景滚动速度是角色速度的10%// 【新增】定义企鹅和雪怪的最大数量上限，您可以根据需要调整这两个值
 const int MAX_PENGUINS = 5;
 const int MAX_YETIS = 2;
 
@@ -306,12 +305,12 @@ void GameScreen::stopGame()
 void GameScreen::updateGame()
 {
     //背景滚动逻辑
-    m_backgroundOffset -= BACKGROUND_SCROLL_SPEED; // 让背景滚动得比地面慢，产生视差效果
+    m_backgroundOffset -= m_player->currentSpeed() * BACKGROUND_SCROLL_RATIO; // 让背景滚动得比地面慢，产生视差效果
     // 2. 当背景完全移出左边界时，将其向右移动一个宽度的距离，实现无缝循环
     //    而不是跳回0！
-    if (m_backgroundOffset <= -width()) {
-        m_backgroundOffset += width();
-    }
+    // if (m_backgroundOffset <= -width()) {
+    //     m_backgroundOffset += width();
+    // }
 
 
     // --- 玩家状态更新 (核心修改) ---
@@ -621,6 +620,162 @@ void GameScreen::updateSnow()
  * @brief 为刚刚生成的一个地形片段放置所有对应的素材。【绝对防重叠最终版】
  * 所有素材（包括障碍物和坐骑）的生成都必须通过isAreaClear检查，并共享同一个occupiedXPositions列表。
  */
+// void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& segmentPoints)
+// {
+//     ///地形的片段枚举：TerrainType
+//     ///当前生成的开始地形片段和结束片段位置：segmentPoints
+//     if (segmentPoints.isEmpty()) return;
+
+//     qreal segmentStartX = segmentPoints.first().x();
+//     qreal segmentEndX = segmentPoints.last().x();
+
+//     qreal windowStartX = floor(segmentStartX / 1080.0) * 1080.0;
+//     if (windowStartX < segmentStartX) {
+//         windowStartX += 1080.0;
+//     }
+
+//     while (windowStartX < segmentEndX) {
+//         if (windowStartX < 1500) {
+//             windowStartX += 1080.0;
+//             continue;
+//         }
+
+//         QList<qreal> occupiedXPositions;
+//         // 【重要修改】增大最小间距，确保即使是大物体之间也有足够空隙
+//         const qreal MIN_SPACING = 200.0;
+
+//         auto isAreaClear = [&](qreal candidateX) {
+//             for (qreal occupiedX : occupiedXPositions) {
+//                 if (qAbs(candidateX - occupiedX) < MIN_SPACING) {
+//                     return false;
+//                 }
+//             }
+//             return true;
+//         };
+
+//         // --- 设定生成顺序：从大物体/重要物体开始，最后放小物体 ---
+
+//         // 1. --- 告示牌 (最高优先级) ---
+//         if (windowStartX >= m_lastSignboardGenX + 10800.0) {
+//             if (type == Steep && isLastSegmentOfPattern(windowStartX)) {
+//                 qreal signboardX = windowStartX + 980.0;
+//                 if (isAreaClear(signboardX)) {
+//                     Signboard* sign = new Signboard(this);
+//                     sign->setPosition(getTerrainInfoAt(signboardX).first);
+//                     // --- 【核心修改在这里】 ---
+//                     sign->setDistance(m_nextSignboardDistance); // 1. 设置距离
+//                     m_nextSignboardDistance += 1000;            // 2. 为下一个告示牌增加1000米
+//                     m_signboards.append(sign);
+//                     m_lastSignboardGenX = windowStartX;
+//                     occupiedXPositions.append(signboardX);
+
+//                     // 【新增】在告示牌生成时，同时生成两个关联的金币
+//                     QPointF signboardPos = sign->position();
+
+//                     // 1. 创建左侧的金币
+//                     Coin* leftCoin = new Coin(this);
+//                     // 您可以在这里微调 X 和 Y 的偏移量来改变位置
+//                     leftCoin->setPosition(signboardPos - QPointF(200, 20)); // 在告示牌左边80像素，上方20像素
+//                     m_coins.append(leftCoin);
+
+//                     // 2. 创建上方的金币
+//                     Coin* topCoin = new Coin(this);
+//                     // 您可以在这里微调 Y 的偏移量来改变位置
+//                     topCoin->setPosition(signboardPos - QPointF(0, 190)); // 在告示牌正上方120像素
+//                     m_coins.append(topCoin);
+
+//                     // --- 添加结束 ---
+
+//                     m_lastSignboardGenX = windowStartX;
+//                     occupiedXPositions.append(signboardX);
+
+//                 }
+//             }
+//         }
+
+//         // 2. --- 房屋 ---
+//         if (QRandomGenerator::global()->generateDouble() < m_probHouse) {
+//             qreal houseCandidateX = 0;
+//             if (type == Gentle) {
+//                 qreal offset = QRandomGenerator::global()->bounded(100, 150);
+//                 houseCandidateX = (QRandomGenerator::global()->generateDouble() < 0.5)
+//                                       ? (windowStartX + 540.0 - offset)
+//                                       : (windowStartX + 740.0 + offset);
+//             } else if (type == Steep) {
+//                 houseCandidateX = windowStartX + 980.0;
+//             }
+
+//             if (houseCandidateX > 0 && isAreaClear(houseCandidateX)) {
+//                 House* house = new House(this);
+//                 house->setPosition(getTerrainInfoAt(houseCandidateX).first);
+//                 m_houses.append(house);
+//                 occupiedXPositions.append(houseCandidateX);
+//             }
+//         }
+
+//         // 3. --- 翘板 ---
+//         if (type == Steep || type == Cliff) {
+//             double seesawProb = (type == Steep) ? m_probSeesawOnSteep : m_probSeesawOnCliff;
+//             if (QRandomGenerator::global()->generateDouble() < seesawProb) {
+//                 qreal seesawCandidateX = (type == Steep) ? (windowStartX + 100.0) : (windowStartX + 25.0) + 100;
+//                 if (isAreaClear(seesawCandidateX)) {
+//                     qDebug()<<"生成的翘板x值为："<<seesawCandidateX;
+//                     Seesaw* seesaw = new Seesaw(this);
+//                     seesaw->setPosition(getTerrainInfoAt(seesawCandidateX).first);
+//                     m_seesaws.append(seesaw);
+//                     occupiedXPositions.append(seesawCandidateX);
+//                 }
+//             }
+//         }
+
+//         // 4. --- 坐骑 (企鹅和雪怪) ---
+//         // 【重要修改】调用改造后的函数，将占用列表和检查函数传进去
+//         generateMountsInWindow(windowStartX);
+
+//         // 5. --- 石头 (最后放置，用于填充剩余空间) ---
+//         qreal smallStoneX = windowStartX + 340.0;
+//         if (isAreaClear(smallStoneX)) {
+//             Stone* newSmallStone = new Stone(Stone::Small, this);
+//             newSmallStone->setPosition(getTerrainInfoAt(smallStoneX).first);
+//             m_obstacles.append(newSmallStone);
+//             occupiedXPositions.append(smallStoneX);
+//         }
+
+//         // 尝试在小石头旁边生成大石头
+//         if (QRandomGenerator::global()->generateDouble() < m_probBigStone) {
+//             qreal bigStoneX = smallStoneX + 20.0;
+//             if (isAreaClear(bigStoneX)) {
+//                 Stone* newBigStone = new Stone(Stone::Large, this);
+//                 newBigStone->setPosition(getTerrainInfoAt(bigStoneX).first);
+//                 m_obstacles.append(newBigStone);
+//                 occupiedXPositions.append(bigStoneX);
+//             }
+//         }
+
+//         // 【新增】在所有东西都放好之后，开始种树
+//         const qreal treeInterval = 125.0;
+//         const qreal treeSpacing = 20.0;
+//         // 从当前地形片段的开始位置循环到结束位置
+//         // for (qreal x = segmentPoints.first().x(); x < segmentPoints.last().x(); x += treeInterval)
+//         // {
+//         //     // 创建第一棵树
+//         //     Tree* tree1 = new Tree(this);
+//         //     tree1->setPosition(getTerrainInfoAt(x).first);
+//         //     m_trees.append(tree1);
+
+//         //     // 创建第二棵树，与第一棵间隔20px
+//         //     Tree* tree2 = new Tree(this);
+//         //     tree2->setPosition(getTerrainInfoAt(x + treeSpacing).first);
+//         //     m_trees.append(tree2);
+//         // }
+
+//         windowStartX += 1080.0;
+//     }
+// }
+
+
+// 在 gamescreen.cpp 中
+
 void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& segmentPoints)
 {
     if (segmentPoints.isEmpty()) return;
@@ -628,149 +783,125 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
     qreal segmentStartX = segmentPoints.first().x();
     qreal segmentEndX = segmentPoints.last().x();
 
+    if (segmentEndX < 1500) return;
+
+
+    // --- 【核心】创建“中央协调员” ---
+    // 1. 创建一个列表，用来记录所有已放置物件的中心X坐标
+    QList<qreal> occupiedXPositions;
+    // 2. 定义所有物件之间必须保持的最小安全距离
+    const qreal MIN_SPACING = 150.0;
+
+    // 3. 创建一个“查询函数”，任何物件在放置前都必须调用它
+    auto isAreaClear = [&](qreal candidateX) {
+        // 遍历所有已占用的位置
+        for (qreal occupiedX : occupiedXPositions) {
+            // 如果新物件的位置与任何一个已存在的物件挨得太近，就返回 false
+            if (qAbs(candidateX - occupiedX) < MIN_SPACING) {
+                return false;
+            }
+        }
+        // 如果和所有已存在的物件都保持了安全距离，就返回 true
+        return true;
+    };
+
+
+    // --- 1. “窗口化”的确定性生成：告示牌和翘板 ---
+    // 我们重新引入 windowStartX 的概念，但只为那些需要固定位置感的物件服务
     qreal windowStartX = floor(segmentStartX / 1080.0) * 1080.0;
     if (windowStartX < segmentStartX) {
         windowStartX += 1080.0;
     }
 
     while (windowStartX < segmentEndX) {
-        if (windowStartX < 1500) {
-            windowStartX += 1080.0;
-            continue;
-        }
-
-        QList<qreal> occupiedXPositions;
-        // 【重要修改】增大最小间距，确保即使是大物体之间也有足够空隙
-        const qreal MIN_SPACING = 200.0;
-
-        auto isAreaClear = [&](qreal candidateX) {
-            for (qreal occupiedX : occupiedXPositions) {
-                if (qAbs(candidateX - occupiedX) < MIN_SPACING) {
-                    return false;
-                }
-            }
-            return true;
-        };
-
-        // --- 设定生成顺序：从大物体/重要物体开始，最后放小物体 ---
-
-        // 1. --- 告示牌 (最高优先级) ---
+        // a. 告示牌和金币 (沿用之前的固定逻辑)
+        // 每10800px（10个窗口）尝试生成一个
         if (windowStartX >= m_lastSignboardGenX + 10800.0) {
             if (type == Steep && isLastSegmentOfPattern(windowStartX)) {
+                Signboard* sign = new Signboard(this);
+                // 位置是固定的 windowStartX + 980
                 qreal signboardX = windowStartX + 980.0;
-                if (isAreaClear(signboardX)) {
-                    Signboard* sign = new Signboard(this);
-                    sign->setPosition(getTerrainInfoAt(signboardX).first);
-                    // --- 【核心修改在这里】 ---
-                    sign->setDistance(m_nextSignboardDistance); // 1. 设置距离
-                    m_nextSignboardDistance += 1000;            // 2. 为下一个告示牌增加1000米
-                    m_signboards.append(sign);
-                    m_lastSignboardGenX = windowStartX;
-                    occupiedXPositions.append(signboardX);
+                sign->setPosition(getTerrainInfoAt(signboardX).first);
+                sign->setDistance(m_nextSignboardDistance);
+                m_nextSignboardDistance += 1000;
+                m_signboards.append(sign);
+                m_lastSignboardGenX = windowStartX;
 
-                    // 【新增】在告示牌生成时，同时生成两个关联的金币
-                    QPointF signboardPos = sign->position();
-
-                    // 1. 创建左侧的金币
-                    Coin* leftCoin = new Coin(this);
-                    // 您可以在这里微调 X 和 Y 的偏移量来改变位置
-                    leftCoin->setPosition(signboardPos - QPointF(200, 20)); // 在告示牌左边80像素，上方20像素
-                    m_coins.append(leftCoin);
-
-                    // 2. 创建上方的金币
-                    Coin* topCoin = new Coin(this);
-                    // 您可以在这里微调 Y 的偏移量来改变位置
-                    topCoin->setPosition(signboardPos - QPointF(0, 190)); // 在告示牌正上方120像素
-                    m_coins.append(topCoin);
-
-                    // --- 添加结束 ---
-
-                    m_lastSignboardGenX = windowStartX;
-                    occupiedXPositions.append(signboardX);
-
-                }
+                // 生成关联的金币
+                Coin* leftCoin = new Coin(this);
+                leftCoin->setPosition(sign->position() - QPointF(200, 20));
+                m_coins.append(leftCoin);
+                Coin* topCoin = new Coin(this);
+                topCoin->setPosition(sign->position() - QPointF(0, 190));
+                m_coins.append(topCoin);
+                // 【登记】放置成功后，立刻登记自己的位置
+                occupiedXPositions.append(signboardX);
             }
         }
 
-        // 2. --- 房屋 ---
-        if (QRandomGenerator::global()->generateDouble() < m_probHouse) {
-            qreal houseCandidateX = 0;
-            if (type == Gentle) {
-                qreal offset = QRandomGenerator::global()->bounded(100, 150);
-                houseCandidateX = (QRandomGenerator::global()->generateDouble() < 0.5)
-                                      ? (windowStartX + 540.0 - offset)
-                                      : (windowStartX + 740.0 + offset);
-            } else if (type == Steep) {
-                houseCandidateX = windowStartX + 980.0;
-            }
-
-            if (houseCandidateX > 0 && isAreaClear(houseCandidateX)) {
-                House* house = new House(this);
-                house->setPosition(getTerrainInfoAt(houseCandidateX).first);
-                m_houses.append(house);
-                occupiedXPositions.append(houseCandidateX);
-            }
-        }
-
-        // 3. --- 翘板 ---
+        // b. 翘板 (在固定位置附近随机)
         if (type == Steep || type == Cliff) {
-            double seesawProb = (type == Steep) ? m_probSeesawOnSteep : m_probSeesawOnCliff;
-            if (QRandomGenerator::global()->generateDouble() < seesawProb) {
-                qreal seesawCandidateX = (type == Steep) ? (windowStartX + 100.0) : (windowStartX + 25.0) + 100;
+            if (QRandomGenerator::global()->generateDouble() < m_probSeesawOnSteep) {
+                qreal seesawCandidateX = windowStartX + 100.0 + QRandomGenerator::global()->bounded(-50, 50);
+                // 在一个固定的基准点 (windowStartX + 100) 附近，增加一个小的随机偏移
                 if (isAreaClear(seesawCandidateX)) {
-                    qDebug()<<"生成的翘板x值为："<<seesawCandidateX;
+                    qreal seesawCandidateX = seesawCandidateX;
                     Seesaw* seesaw = new Seesaw(this);
                     seesaw->setPosition(getTerrainInfoAt(seesawCandidateX).first);
                     m_seesaws.append(seesaw);
+                    // 【登记】放置成功后，立刻登记自己的位置
                     occupiedXPositions.append(seesawCandidateX);
                 }
             }
         }
 
-        // 4. --- 坐骑 (企鹅和雪怪) ---
-        // 【重要修改】调用改造后的函数，将占用列表和检查函数传进去
-        generateMountsInWindow(windowStartX);
-
-        // 5. --- 石头 (最后放置，用于填充剩余空间) ---
-        qreal smallStoneX = windowStartX + 340.0;
-        if (isAreaClear(smallStoneX)) {
-            Stone* newSmallStone = new Stone(Stone::Small, this);
-            newSmallStone->setPosition(getTerrainInfoAt(smallStoneX).first);
-            m_obstacles.append(newSmallStone);
-            occupiedXPositions.append(smallStoneX);
-        }
-
-        // 尝试在小石头旁边生成大石头
-        if (QRandomGenerator::global()->generateDouble() < m_probBigStone) {
-            qreal bigStoneX = smallStoneX + 20.0;
-            if (isAreaClear(bigStoneX)) {
-                Stone* newBigStone = new Stone(Stone::Large, this);
-                newBigStone->setPosition(getTerrainInfoAt(bigStoneX).first);
-                m_obstacles.append(newBigStone);
-                occupiedXPositions.append(bigStoneX);
-            }
-        }
-
-        // 【新增】在所有东西都放好之后，开始种树
-        const qreal treeInterval = 125.0;
-        const qreal treeSpacing = 20.0;
-        // 从当前地形片段的开始位置循环到结束位置
-        // for (qreal x = segmentPoints.first().x(); x < segmentPoints.last().x(); x += treeInterval)
-        // {
-        //     // 创建第一棵树
-        //     Tree* tree1 = new Tree(this);
-        //     tree1->setPosition(getTerrainInfoAt(x).first);
-        //     m_trees.append(tree1);
-
-        //     // 创建第二棵树，与第一棵间隔20px
-        //     Tree* tree2 = new Tree(this);
-        //     tree2->setPosition(getTerrainInfoAt(x + treeSpacing).first);
-        //     m_trees.append(tree2);
-        // }
-
         windowStartX += 1080.0;
     }
+
+
+    // --- 2. “全范围”的随机生成：房屋、石头、树木 ---
+    // 这部分逻辑沿用我们上一版的随机生成，确保它们看起来是随心所欲的
+
+    // a. 房屋
+    if (type == Gentle && QRandomGenerator::global()->generateDouble() < m_probHouse) {
+        qreal houseCandidateX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX) + 200, static_cast<int>(segmentEndX) - 200);
+        // 【遵守规则】放置前先查询
+        if (isAreaClear(houseCandidateX)) {
+            House* house = new House(this);
+            house->setPosition(getTerrainInfoAt(houseCandidateX).first);
+            m_houses.append(house);
+            // 【登记】放置成功后，立刻登记自己的位置
+            occupiedXPositions.append(houseCandidateX);
+        }
+    }
+
+    // b. 石头
+    int stoneCount = QRandomGenerator::global()->bounded(1, 4);
+    for (int i = 0; i < stoneCount; ++i) {
+        qreal stoneCandidateX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX), static_cast<int>(segmentEndX));
+        // 【遵守规则】放置前先查询
+        if (isAreaClear(stoneCandidateX)) {
+            Stone* newStone = new Stone(Stone::Small, this);
+            newStone->setPosition(getTerrainInfoAt(stoneCandidateX).first);
+            m_obstacles.append(newStone);
+            // 【登记】放置成功后，立刻登记自己的位置
+            occupiedXPositions.append(stoneCandidateX);
+        }
+    }
+
+    // c. 树木
+    int treeCount = QRandomGenerator::global()->bounded(5, 15);
+    for (int i = 0; i < treeCount; ++i) {
+        qreal treeX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX), static_cast<int>(segmentEndX));
+        Tree* tree = new Tree(this);
+        tree->setPosition(getTerrainInfoAt(treeX).first + QPointF(0, -QRandomGenerator::global()->bounded(10, 30)));
+        tree->setScale(QRandomGenerator::global()->generateDouble() * 0.4 + 0.7);
+        m_trees.append(tree);
+    }
+
+    generateMountsInWindow(windowStartX);
 }
+
 
 /**
  * @brief 在一个1080px的窗口内，生成坐骑。【数量上限修正版】
@@ -991,19 +1122,16 @@ void GameScreen::paintEvent(QPaintEvent *event)
 
     // --- 绘制背景 (有视差滚动) ---
     painter.save();
-    // 背景的偏移与世界偏移独立，以创造深度感
-    // qreal bg_x = fmod(-m_backgroundOffset, width());
-    //qreal bg_x = -m_backgroundOffset; // 偏移量直接为负，代表向左移动
-    // 强制转换为整数，以消除浮点数精度导致的接缝问题
-    int bg_x = static_cast<int>(m_backgroundOffset);
-    // painter.drawPixmap(bg_x - width(), 0, width(), height(), m_backgroundPixmap);
-    // painter.drawPixmap(bg_x, 0, width(), height(), m_backgroundPixmap);
-    // painter.drawPixmap(bg_x + width(), 0, width(), height(), m_backgroundPixmap);
-    // 绘制第一张背景图
-    painter.drawPixmap(bg_x, 0, width(), height(), m_backgroundPixmap);
+    qreal bg_x = fmod(m_backgroundOffset, width());
 
-    // 绘制第二张背景图，紧跟在第一张的右边，实现无缝拼接
-    painter.drawPixmap(bg_x + width(), 0, width(), height(), m_backgroundPixmap);
+    int x1_base = static_cast<int>(bg_x);
+    int w = width();
+
+    // 3. 【最关键】绘制三张图，每一张都比前一张“提前”2个像素，形成覆盖
+    //    绘制顺序：左 -> 中 -> 右，后画的会盖住先画的
+    painter.drawPixmap(x1_base - w, 0, w, height(), m_backgroundPixmap);       // 左边的图，位置不变
+    painter.drawPixmap(x1_base - 2, 0, w, height(), m_backgroundPixmap);      // 中间的图，提前2像素，覆盖左图
+    painter.drawPixmap(x1_base + w - 4, 0, w, height(), m_backgroundPixmap); // 右边的图，再提前2像素，覆盖中图
 
     painter.restore();
 

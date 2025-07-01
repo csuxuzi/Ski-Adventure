@@ -13,12 +13,15 @@ AudioManager* AudioManager::instance()
 
 AudioManager::AudioManager(QObject *parent)
     : QObject(parent), m_musicPlayer(new QMediaPlayer(this)), m_musicAudioOutput(new QAudioOutput(this)),
-      m_musicEnabled(true), m_sfxEnabled(true),
-        m_gameBgmIndex(0),
-        m_currentBgm(BgmType::MainMenu)
+    m_musicEnabled(true), m_sfxEnabled(true),
+    m_gameBgmIndex(0),
+    m_currentBgm(BgmType::MainMenu),
+    m_sfxVolume(0.5)
 {
     // 配置背景音乐播放器
     m_musicPlayer->setAudioOutput(m_musicAudioOutput);
+
+    m_musicAudioOutput->setVolume(0.7); // 设置初始音乐音量为 70%
 
     // 【核心】在构造函数中，一次性加载所有音效到内存
     loadBgmLists();
