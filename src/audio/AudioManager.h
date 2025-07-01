@@ -28,7 +28,16 @@ enum class SfxType {
     PlayerCrash,
     StoneShatter,
     HouseShatter,
-    SeesawShatter
+    SeesawShatter,
+    PlayerSlide,        //角色滑行
+    // --- 【在这里新增以下音效类型】 --
+    SeesawSlide,        // 翘板滑行 (将作为循环音效)
+    YetiRoar,           // 雪怪叫
+    PenguinChirp,       // 企鹅叫
+    PenguinPoof,        // 企鹅破碎
+    YetiPoof,           // 雪怪破碎
+    CoinGet,             // 金币获取
+    YetiBroke           //雪怪跛腿
 };
 
 class AudioManager : public QObject
@@ -48,6 +57,9 @@ public:
     void setMusicVolume(float volume); // volume is 0.0 to 1.0
     void setSfxVolume(float volume);   // volume is 0.0 to 1.0
 
+    // --- 【在这里新增两个函数声明】 ---
+    void playContinuousSound(SfxType type);
+    void stopContinuousSound(SfxType type);
 
     // --- 【新增】获取状态和音量的接口 ---
     bool isMusicEnabled() const;
@@ -69,6 +81,8 @@ private:
     // 【修改】修改BGM加载函数名
     void loadBgmLists();
     bool isDestructive(SfxType type) const;
+    // --- 【在这里新增一行函数声明】 ---
+    bool isMountSound(SfxType type) const;
 
     AudioManager& operator=(const AudioManager&) = delete;
 

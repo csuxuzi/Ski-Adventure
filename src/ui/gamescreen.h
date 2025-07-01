@@ -44,6 +44,13 @@ public:
     // 【新增】核心计分接口
     void addScore(int baseScore);
 
+    ///卡片相关
+
+
+    Player* getPlayer() const { return m_player; }
+    Avalanche* getAvalanche() const { return m_avalanche; }
+    void applyScoreMultiplier(float multiplier, int durationMs);
+
     // 【新增】一个 public 的 getTerrainInfoAt, 以便雪崩对象可以调用
     QPair<QPointF, qreal> getTerrainInfoAt(qreal x_pos);
 signals:
@@ -78,6 +85,9 @@ private:
     //<QPointF, qreal> getTerrainInfoAt(qreal x_pos);
     void updateSnowPath();
 
+
+    // --- 【在这里新增一个槽函数】 ---
+    void showDebugInfo();
 
     // 【新增】根据概率选择并生成下一个地形模式的函数
     void generateNextPattern();
@@ -150,6 +160,7 @@ private:
     qreal m_lastSignboardGenX;
     qreal m_lastMountX = 0;;
 
+    int m_signboardCount; // 用于计算已生成了多少个告示牌
     int m_nextSignboardDistance; // 记录下一个告示牌的距离
 
     // 游戏实体
@@ -166,6 +177,11 @@ private:
     GameOverDialog* m_gameOverDialog; // <-- 【新增】
     // --- 【在这里添加新行】 ---
     CardSelectionDialog* m_cardDialog;
+    // --- 【在这里新增UI成员变量】 ---
+    QLabel* m_infoLabel;          // 用于显示速度和距离的标签
+    ImageButton* m_debugButton;    // 用于打开调试窗口的按钮
+    QDialog* m_debugDialog;        // 调试信息对话框
+
 
     QList<Penguin*> m_penguins; // <-- 【新增】
     QList<Yeti*> m_yetis;       // <-- 【新增】
@@ -173,8 +189,9 @@ private:
 
     // 【新增】分数倍率
     qreal m_scoreMultiplier;
-
-
+    // 【修改】将 m_scoreMultiplier 移动到这里，并添加一个计时器
+    QTimer* m_scoreMultiplierTimer; // 用于恢复得分倍率
+    // --- 【在这里新增一行代码】 ---
     // --- 【新增】得分系统相关成员 ---
     QLabel* m_scoreLabel;                  // 用于显示分数的UI标签
     quint64 m_score;                       // 存储当前总分 (使用 quint64 防止溢出)
@@ -191,7 +208,7 @@ private:
     qreal m_warningScale;           // 图片当前的缩放比例
     qreal m_warningRotation;        // 图片当前的旋转角度
     qreal m_rotationDirection;      // 旋转方向 (1 或 -1)
-    QTimer* m_warningDelayTimer; // <-- 【新增】换成这个可以完全控制的定时器
+    QTimer* m_warningDelayTimer; // 换成这个可以完全控制的定时器
 
     bool m_warningEnabled;
 };

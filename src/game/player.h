@@ -42,10 +42,14 @@ public:
 
     // --- 【新增】获取当前速度大小的接口 ---
     qreal currentSpeed() const { return m_currentSpeed; }
+    qreal baseSpeed() const { return m_baseSpeed; }
+    // --- 【在这里添加以下两个函数】 ---
+    qreal currentGravity() const { return m_currentGravity; }
+    qreal jumpForce() const { return m_jumpForce; }
 
     // 覆盖基类的 update 方法来实现玩家自己的逻辑
     void update() override;
-    void startInvincibility(); // <-- 【新增】声明新的私有函数
+    void startInvincibility(int customDuration = 0); // customDuration = 0 表示使用默认时间
 
     // --- 【新增】骑乘系统的公共接口 ---
     void rideMount(MountType type, const QList<QPixmap>& mountFrames, qreal newSpeed, qreal newGravity);

@@ -18,9 +18,14 @@ public:
 
     qreal width() const;
 
+    void applySlowDown(float slowDownFactor, int duration);
+    // 立刻将雪崩向后推开一段距离
+    void pushBack(float distance);
+
 private:
     GameScreen* m_gameScreen; // 用于访问地形信息的指针
-    qreal m_acceleration;     // X轴的加速度
+    qreal m_baseAcceleration; // 【修改】将 m_acceleration 重命名为 m_baseAcceleration
+    qreal m_currentAcceleration; // 【新增】用于表示当前实际的加速度
     qreal m_verticalOffset;   // 相对于地形的垂直高度偏移
 };
 

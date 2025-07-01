@@ -40,7 +40,6 @@
         <file>icon_music_on.png</file>
         <file>icon_sfx_off.png</file>
         <file>icon_sfx_on.png</file>
-        <file>tree.png</file>
         <file>highscore_icon.png</file>
         <file>records_icon.png</file>
         <file>敬请期待.png</file>
@@ -48,6 +47,8 @@
         <file>leftDoor.png</file>
         <file>sleepPlayer.png</file>
         <file>game_background.png</file>
+        <file>tree.png</file>
+        <file>debug-icon.png</file>
     </qresource>
     <qresource prefix="/assets/audio/music">
         <file>main_menu.mp3</file>
@@ -116,6 +117,18 @@
         <file>house_shatter.wav</file>
         <file>stone_shatter2.wav</file>
         <file>player_crash.wav</file>
+        <file>coin_get.wav</file>
+        <file>house_slide.wav</file>
+        <file>fx_door_open_01.wav</file>
+        <file>game_bgm_1.wav</file>
+        <file>fx_avalanche_rumble.wav</file>
+        <file>yeti_poof1.wav</file>
+        <file>penguin_chirp.wav</file>
+        <file>yeti_poof2.wav</file>
+        <file>game_bgm_2.wav</file>
+        <file>penguin_poof.wav</file>
+        <file>yeti_roar.wav</file>
+        <file>player_slide.wav</file>
     </qresource>
     <qresource prefix="/assets/images/coins">
         <file>coin_1.png</file>

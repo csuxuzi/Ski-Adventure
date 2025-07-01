@@ -17,9 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     ///链接信号与槽
     createConnections();
 
-    // 启动背景音乐
-    // AudioManager::instance()->playMainMenuMusic();
-    // 【修改】启动主菜单的背景音乐
     AudioManager::instance()->playBgm(BgmType::MainMenu);
 }
 
@@ -48,15 +45,13 @@ void MainWindow::createConnections()
 {
     connect(m_mainMenuScreen, &MainMenuScreen::startGameClicked, this, &MainWindow::startGame);
     connect(m_mainMenuScreen, &MainMenuScreen::settingsClicked, this, &MainWindow::showSettings);
-    // --- 【新增】连接游戏界面的返回信号 ---
     connect(m_gameScreen, &GameScreen::backToMainMenuRequested, this, &MainWindow::showMainMenu);
 }
 
 void MainWindow::showMainMenu()
 {
     m_stackedWidget->setCurrentWidget(m_mainMenuScreen);
-    m_mainMenuScreen->resetUI(); // <-- 【新增】调用UI重置函数
-
+    m_mainMenuScreen->resetUI();
     AudioManager::instance()->playBgm(BgmType::MainMenu);
 }
 
@@ -68,15 +63,8 @@ void MainWindow::showSettings()
 
 void MainWindow::startGame()
 {
-    // 这里是占位符，后续将切换到游戏界面
     AudioManager::instance()->playBgm(BgmType::GameScreen);
-    qDebug() << "Start Game button clicked! Should switch to game screen.";
-    // m_stackedWidget->setCurrentWidget(m_gameScreen);
-    // // 让游戏界面开始自己的游戏循环
-    // m_gameScreen->startGame();
-    // 【核心修改】在显示游戏界面之前，先命令它进行一次彻底的重置
     m_gameScreen->restartGame();
-
     // 然后再切换到焕然一新的游戏界面
     m_stackedWidget->setCurrentWidget(m_gameScreen);
 }

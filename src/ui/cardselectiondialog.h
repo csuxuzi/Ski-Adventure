@@ -13,14 +13,14 @@ class CardSelectionDialog : public QDialog
 public:
     explicit CardSelectionDialog(QWidget *parent = nullptr);
     const CardData& getSelectedCardData() const;
-
+    void generateRandomCards();
 private slots:
     void onCardClicked(CardWidget* clickedWidget);
     void onSubmit();
 
 private:
     void setupUI();
-    void generateRandomCards();
+
 
     QList<CardWidget*> m_cards;
     CardWidget* m_selectedCard = nullptr;

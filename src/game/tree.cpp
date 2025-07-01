@@ -19,7 +19,13 @@ void Tree::update()
 void Tree::draw(QPainter* painter)
 {
     painter->save(); // 保存一下画笔当前的状态
-    painter->setOpacity(0.7); // 【核心】把透明度设为70%（您也可以改成0.6, 0.8等）
-    GameObject::draw(painter); // 调用基类的 draw 函数，把自己（带透明度）画出来
+    // 2. 首先，将坐标系平移到这棵树自己的位置
+    painter->translate(m_position);
+    painter->setOpacity(0.5); // 【核心】把透明度设为70%（您也可以改成0.6, 0.8等）
+    if (!m_pixmap.isNull()) {
+        // 基类 draw 的核心逻辑是这两行，我们直接拿过来用
+        QPointF drawPos(-m_pixmap.width() / 2.0, -m_pixmap.height());
+        painter->drawPixmap(drawPos, m_pixmap);
+    }
     painter->restore(); // 恢复画笔状态，不影响其他东西的绘制
 }

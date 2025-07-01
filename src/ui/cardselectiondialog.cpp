@@ -5,7 +5,7 @@
 #include <QPushButton>
 #include <QRandomGenerator>
 #include <QDebug>
-
+#include "game/CardDatabase.h"
 CardSelectionDialog::CardSelectionDialog(QWidget *parent) : QDialog(parent)
 {
     // 设置为无边框的模态对话框
@@ -93,22 +93,25 @@ void CardSelectionDialog::onSubmit()
 // 随机生成三张卡片的逻辑（这是一个简单的示例）
 void CardSelectionDialog::generateRandomCards()
 {
-    QList<CardData> allPossibleCards;
-    allPossibleCards.append({CardEffectType::IncreaseSpeed, "肾上腺素", "获得爆发性的速度，持续10秒。", 5.0f});
-    allPossibleCards.append({CardEffectType::DecreaseGravity, "轻如鸿毛", "身体变轻，跳得更高，下落更慢。", 0.2f});
-    allPossibleCards.append({CardEffectType::IncreaseJump, "强力弹簧", "跳跃力量大幅增强。", 5.0f});
-    allPossibleCards.append({CardEffectType::SlowDownAvalanche, "时间沙漏", "让身后的雪崩速度减慢。", -0.001f});
-    // 您可以添加更多卡片到这个列表里
-
-    if (allPossibleCards.size() < 3) return;
-
-    // 随机挑选三张不重复的卡片
-    for (int i = 0; i < 3; ++i) {
-        int randomIndex = QRandomGenerator::global()->bounded(allPossibleCards.size());
-        m_cards[i]->setCardData(allPossibleCards.takeAt(randomIndex));
-        m_cards[i]->setSelected(false); // 确保都是未选中状态
+    // 1. 决定这次抽卡的稀有度档次
+    // 简单示例：80%概率普通，15%稀有，5%传说
+    CardRarity rarityToDraw = CardRarity::Common;
+    int roll = QRandomGenerator::global()->bounded(100);
+    if (roll < 5) {
+        rarityToDraw = CardRarity::Legendary;
+    } else if (roll < 20) {
+        rarityToDraw = CardRarity::Rare;
     }
 
+    // 2. 从三个类别中，各抽取一张指定稀有度的卡片
+    m_cards[0]->setCardData(CardDatabase::instance().drawCard(CardCategory::Character, rarityToDraw));
+    m_cards[1]->setCardData(CardDatabase::instance().drawCard(CardCategory::Score, rarityToDraw));
+    m_cards[2]->setCardData(CardDatabase::instance().drawCard(CardCategory::Avalanche, rarityToDraw));
+
+    // 3. 重置UI状态
+    for (CardWidget* card : m_cards) {
+        card->setSelected(false);
+    }
     m_selectedCard = nullptr;
     m_submitButton->setEnabled(false);
 }

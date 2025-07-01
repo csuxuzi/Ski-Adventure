@@ -14,7 +14,7 @@ public:
     void setCardData(const CardData& data);
     const CardData& getCardData() const;
     void setSelected(bool selected);
-
+    void updateStyle();
 signals:
     void clicked(CardWidget* widget); // 当被点击时，发射一个信号告诉父窗口
 
@@ -31,6 +31,7 @@ private:
     QLabel* m_descriptionLabel;
     CardData m_cardData;
     bool m_isSelected = false;
+
 };
 
 #endif // CARDWIDGET_H

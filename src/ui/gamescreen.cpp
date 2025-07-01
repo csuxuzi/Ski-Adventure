@@ -5,65 +5,67 @@
 #include <QDebug>
 #include <QMatrix4x4>
 #include <QRandomGenerator>
-#include <QtMath> // 用于计算角度
-#include <QVector3D> // <-- 在这里添加这一行
+#include <QtMath>
+#include <QVector3D>
+#include <QVBoxLayout>
 #include<QKeyEvent>
 #include "game/Stone.h"
-#include "game/House.h" // <-- 引入 House 头文件
+#include "game/House.h"
 #include "game/Seesaw.h"
 #include "game/Signboard.h"
-#include "ui/ImageButton.h" // <-- 【新增】
-#include "ui/PauseDialog.h" // <-- 【新增】
+#include "ui/ImageButton.h"
+#include "ui/PauseDialog.h"
 #include "game/Avalanche.h"
 #include "ui/GameOverDialog.h"
-#include "game/Penguin.h" // <-- 【新增】
-#include "game/Yeti.h"    // <-- 【新增】
+#include "game/Penguin.h"
+#include "game/Yeti.h"
 #include "game/Coin.h"
-#include "fx/EffectManager.h" // <-- 【新增】包含头文件
+#include "fx/EffectManager.h"
 #include "ui/CardSelectionDialog.h"
 #include "fx/EffectManager.h"
 #include "game/Tree.h"
+#include "audio/AudioManager.h"
+
 // 定义地形的一些常量，便于调整
 const int TERRAIN_POINT_INTERVAL = 20; // 每个地形点的水平间距
 const int TERRAIN_MIN_Y = 450;         // 地形的最低高度
 const int TERRAIN_MAX_Y = 550;         // 地形的最高高度
 const qreal SCROLL_SPEED = 2.0;        // 地面的滚动速度
-const qreal PLAYER_VISIBLE_Y_MIN = 350.0;
+const qreal PLAYER_VISIBLE_Y_MIN = 350.0;  // 玩家的固定y范围
 const qreal PLAYER_VISIBLE_Y_MAX = 400.0;
 // 定义玩家在屏幕上固定的X轴位置
 const qreal PLAYER_FIXED_X = 200.0;
 
 
 // 雪崩相关
-const qreal AVALANCHE_START_OFFSET_X = -200.0; // 雪崩初始时在玩家身后的距离
+const qreal AVALANCHE_START_OFFSET_X = -800.0; // 雪崩初始时在玩家身后的距离
 const qreal AVALANCHE_SPEED_MULTIPLIER = 0.6;  // 雪崩初始速度是玩家的百分之多少
 
 // 坐骑相关
 const qreal PENGUIN_INITIAL_SPEED = 8.0; // 企鹅的初始速度
 const qreal YETI_INITIAL_SPEED = 10.5;    // 雪怪的初始速度
-// --- 【新增】定义角色骑上坐骑后的新速度 ---
-const qreal PLAYER_SPEED_ON_PENGUIN = 15.0; // 角色骑上企鹅后的速度
-const qreal PLAYER_SPEED_ON_YETI = 20.0;    // 角色骑上雪怪后的速度
-// --- 【新增】定义角色骑上坐骑后的新重力加速度 ---
+
+const qreal PLAYER_SPEED_MULTIPLIER_ON_PENGUIN = 1.2; // 骑上企鹅后，速度变为基础速度的 1.2 倍
+const qreal PLAYER_SPEED_MULTIPLIER_ON_YETI = 1.6;    // 骑上雪怪后，速度变为基础速度的 1.6 倍
+// 定义角色骑上坐骑后的新重力加速度
 const qreal PLAYER_GRAVITY_ON_PENGUIN = 0.3; // 角色骑上企鹅后的速度
 const qreal PLAYER_GRAVITY_ON_YETI = 0.8;    // 角色骑上雪怪后的速度
 // 视觉效果相关
-const qreal BACKGROUND_SCROLL_RATIO = 0.1; // 【修改】背景滚动速度是角色速度的10%// 【新增】定义企鹅和雪怪的最大数量上限，您可以根据需要调整这两个值
+const qreal BACKGROUND_SCROLL_RATIO = 0.1; //背景滚动速度是角色速度的10%// 【新增】定义企鹅和雪怪的最大数量上限，您可以根据需要调整这两个值
 const int MAX_PENGUINS = 5;
 const int MAX_YETIS = 2;
 
 
 GameScreen::GameScreen(QWidget *parent)
     : QWidget(parent), m_backgroundOffset(0),
-    m_worldOffset(0), m_verticalOffset(0) // 初始化 m_worldOffset
-    ,// --- ↓↓↓ 新增这三行 ↓↓↓ ---
+    m_worldOffset(0), m_verticalOffset(0),
+    ///初始化各种概率
     m_probNormal(0.70),
     m_probExciting(0.25),
     m_probSuperExciting(0.05),
-
     m_probBigStone(0.30),
     m_probHouse(0.20),
-    m_probSleighInHouse(0.02), // 初始2%
+    m_probSleighInHouse(0.02),
     m_probSeesawOnCliff(0.50),
     m_probSeesawOnSteep(0.70),
     m_probPenguin_1(0.70),
@@ -71,52 +73,61 @@ GameScreen::GameScreen(QWidget *parent)
     m_probPenguin_3(0.10),
     m_probYeti_1(0.30),
     m_probYeti_2(0.10),
+    ///当前生成的告示牌索引
+    m_signboardCount(0),
     m_lastMountGenX(0),
-    // ---【在这里添加一行，不要漏掉逗号】---
     m_nextSignboardDistance(1000),
     m_lastSignboardGenX(0),
-    // --- 【新增】初始化得分变量 ---
+    // 初始化得分变量
     m_score(0),
     m_distanceTraveledForScore(0.0),
-    m_scoreMultiplier(1.0),// 【新增】默认倍率为1
-    m_lastTreeX(0) // 【新增】初始化
+    m_scoreMultiplier(1.0),// 默认倍率为1
+    m_lastTreeX(0)
 {
 
-    // 【新增】初始化警告相关的变量
+    m_scoreMultiplier = 1.0; // 默认倍率为1
+    m_scoreMultiplierTimer = new QTimer(this);
+    m_scoreMultiplierTimer->setSingleShot(true); // 设置为一次性触发
+    // 连接计时器到 lambda 函数，用于时间结束后恢复倍率
+    connect(m_scoreMultiplierTimer, &QTimer::timeout, this, [this]() {
+        m_scoreMultiplier = 1.0;
+        qDebug() << "得分倍率效果结束，已恢复为 1.0x";
+    });
+
+    // 初始化警告相关的变量
     m_isWarningVisible = false;
     m_warningScale = 1.0;
     m_warningRotation = 0.0;
     m_rotationDirection = 1.0; // 初始旋转方向设为1
     m_warningEnabled = false;  // 一开始不允许显示警告
 
-    // 【新增】加载警告图片
+    // 加载警告图片
     if (!m_warningPixmap.load(":/assets/images/warning.png")) {
-        qWarning() << "大哥，没找到警告图片 a.k.a warning.png 啊！";
+        qWarning() << "没找到警告图片warning.png";
     }
 
-    // 【核心修改】创建并设置定时器，但先不启动
+    // 创建并设置定时器，但先不启动,在startGame启动
     m_warningDelayTimer = new QTimer(this);
     m_warningDelayTimer->setSingleShot(true); // 仍然只触发一次
     connect(m_warningDelayTimer, &QTimer::timeout, this, [this](){
         m_warningEnabled = true; // 时间到，打开警告开关
     });
 
-    // 1. 加载背景图，如果失败则创建一个蓝色背景作为占位符
+    // 加载背景图，如果失败则创建一个蓝色背景作为占位符
     if (!m_backgroundPixmap.load(":/assets/images/game_background.png")) {
         qWarning("Could not load game background image, creating a placeholder.");
-        // 您期望的窗口尺寸是 1080x720，但主窗口目前是 800x600
-        // 这里我们先使用主窗口的尺寸，便于查看
         m_backgroundPixmap = QPixmap(800, 600);
-        m_backgroundPixmap.fill(QColor("#87CEEB")); // 天蓝色
+        m_backgroundPixmap.fill(QColor("#87CEEB"));
     }
 
     setupUI();
+
     m_cardDialog = new CardSelectionDialog(this); // 创建实例
 
     // 2. 创建并连接计时器，用于驱动游戏循环
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &GameScreen::updateGame);
-    connect(m_timer, &QTimer::timeout, this, &GameScreen::updateSnow);
+    //connect(m_timer, &QTimer::timeout, this, &GameScreen::updateSnow);
 
     // 3. 初始化地形
     generateInitialTerrain();
@@ -153,21 +164,19 @@ void GameScreen::addScore(int baseScore)
 // --- 【新增】UI设置函数的实现 ---
 void GameScreen::setupUI()
 {
-    // 1. 创建暂停按钮
+    // 创建暂停按钮
     m_pauseButton = new ImageButton(":/assets/images/btn_pause.png", this);
-    // 将其移动到右上角，留出一些边距
-    //m_pauseButton->move(width() - m_pauseButton->width() - 20, 20);
     m_pauseButton->move(1200, 20);
 
-    // 2. 创建暂停对话框
+    // 创建暂停对话框
     m_pauseDialog = new PauseDialog(this);
     m_pauseDialog->hide(); // 默认隐藏
 
-    // --- 【新增】创建游戏结束对话框 ---
+    // 创建游戏结束对话框
     m_gameOverDialog = new GameOverDialog(this);
     m_gameOverDialog->hide(); // 默认隐藏
 
-    // --- 【新增】创建并设置分数标签 ---
+    // 创建并设置分数标签
     m_scoreLabel = new QLabel(this);
     m_scoreLabel->setStyleSheet(
         "font-size: 28px;"
@@ -178,28 +187,48 @@ void GameScreen::setupUI()
         "padding: 5px;"
         );
     m_scoreLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-    // 将其放置在暂停按钮的左侧
-    m_scoreLabel->move(m_pauseButton->x() - 220, 20);
+    m_scoreLabel->move(m_pauseButton->x() - 300, 20);
     m_scoreLabel->setFixedSize(200, 40);
     m_scoreLabel->setText("0"); // 初始分数
+
+    // 创建用于显示实时信息的标签
+    m_infoLabel = new QLabel(this);
+    m_infoLabel->setStyleSheet(
+        "font-size: 16px;"
+        "color: white;"
+        "background-color: rgba(0, 0, 0, 100);"
+        "border-radius: 8px;"
+        "padding: 5px;"
+        );
+    m_infoLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    m_infoLabel->setFixedSize(600, 40);
+    m_infoLabel->move(m_scoreLabel->x() - 620, 20);
+    m_infoLabel->setText("速度: 0.0 | 雪崩速度: 0.0 | 距离: 0.0");
+
+    // 创建用于打开调试窗口的按钮
+    m_debugButton = new ImageButton(":/assets/images/debug-icon.png", 0.23,this);
+    m_debugButton->move(1120, 20); // 放置在左上角
+
+    // 将按钮的点击信号连接到 showDebugInfo 槽
+    connect(m_debugButton, &QPushButton::clicked, this, &GameScreen::showDebugInfo);
+
 
     // 3. 连接所有信号与槽
     connect(m_pauseButton, &QPushButton::clicked, this, &GameScreen::onPauseButtonClicked);
     connect(m_pauseDialog, &PauseDialog::resumeClicked, this, &GameScreen::startGame); // 继续游戏就是重启计时器
     connect(m_pauseDialog, &PauseDialog::restartClicked, this, &GameScreen::restartGame);
-    // 【修改】将暂停菜单的退出按钮连接到新的 handleExit 槽
+    // 将暂停菜单的退出按钮连接到新的 handleExit 槽
     connect(m_pauseDialog, &PauseDialog::exitClicked, this, &GameScreen::handleExit);
-
     connect(m_gameOverDialog, &GameOverDialog::restartClicked, this, &GameScreen::restartGame);
-    // 【修改】将游戏结束菜单的退出按钮也连接到新的 handleExit 槽
+    // 将游戏结束菜单的退出按钮也连接到新的 handleExit 槽
     connect(m_gameOverDialog, &GameOverDialog::exitClicked, this, &GameScreen::handleExit);
 }
-// --- 【新增】暂停按钮的槽函数实现 ---
+// 暂停按钮的槽函数实现
 void GameScreen::onPauseButtonClicked()
 {
     stopGame(); // 停止游戏计时器
     m_pauseDialog->exec(); // 以模态方式显示暂停对话框，会阻塞游戏窗口
-    // 【新增】对话框关闭后，立刻将焦点还给游戏窗口
+    // 对话框关闭后，立刻将焦点还给游戏窗口
     this->setFocus();
 }
 void GameScreen::handleExit()
@@ -219,13 +248,12 @@ void GameScreen::handleExit()
 }
 
 
-// 【修改后】一个功能更强大的、公开的 restartGame 函数
 void GameScreen::restartGame()
 {
-    // 1. 确保所有计时器都已停止
+    // 确保所有计时器都已停止
     stopGame();
 
-    // 2. 如果有对话框是打开的，先关闭它们
+    // 如果有对话框是打开的，先关闭它们
     if (m_pauseDialog->isVisible()) {
         m_pauseDialog->accept();
     }
@@ -233,7 +261,7 @@ void GameScreen::restartGame()
         m_gameOverDialog->accept();
     }
 
-    // 3. 清理所有游戏对象，回到“空无一物”的状态
+    // 清理所有游戏对象
     m_snowPoints.clear();
     qDeleteAll(m_obstacles);
     m_obstacles.clear();
@@ -243,8 +271,8 @@ void GameScreen::restartGame()
     m_seesaws.clear();
     qDeleteAll(m_signboards);
     m_signboards.clear();
-    qDeleteAll(m_coins);      // <-- 【在这里添加新行】
-    m_coins.clear();          // <-- 【在这里添加新行】
+    qDeleteAll(m_coins);
+    m_coins.clear();
     delete m_player;
     m_player = nullptr;
     delete m_avalanche;
@@ -254,38 +282,39 @@ void GameScreen::restartGame()
     m_trees.clear();
     m_lastTreeX = 0;
 
-    // 4. 重置世界和镜头的偏移量
+    m_signboardCount = 0;
+    // 重置世界和镜头的偏移量
     m_worldOffset = 0;
     m_verticalOffset = 0;
-    m_lastObstacleX = 0; // 【新增】重置障碍物生成记录
-
-    // --- ↓↓↓ 新增这几行 ↓↓↓ ---
-    m_lastObstacleX = 0;
     m_lastMountX = 0;
 
-    // --- 【新增】重置分数 ---
+    // 重置分数
     m_score = 0;
     m_distanceTraveledForScore = 0.0;
-    if (m_scoreLabel) { // 安全检查，确保标签已创建
+    if (m_scoreLabel) {
         m_scoreLabel->setText("0");
     }
-    // ---【在这里添加一行】---
+
+    m_scoreMultiplierTimer->stop();
+    m_scoreMultiplier = 1.0;    // 将倍率重置为1
+
+
     m_nextSignboardDistance = 1000;
 
-    // 【新增】在所有逻辑的最开始，就重置警告状态
-    m_warningDelayTimer->stop(); // 立即停止上一局可能还在计时的定时器
-    m_warningEnabled = false;    // 关上警告开关
-    m_isWarningVisible = false;  // 隐藏警告图片
+    // 重置警告状态
+    m_warningDelayTimer->stop();
+    m_warningEnabled = false;
+    m_isWarningVisible = false;
 
-    // 5. 像第一次启动一样，重新创建整个游戏世界
+    // 重新创建整个游戏世界
     generateInitialTerrain();
     resetGameState();
     //setupObstacles();
 
-    // 6. 重新开始游戏循环
+    // 重新开始游戏循环
     startGame();
 
-    // 7. 确保游戏窗口获得键盘焦点
+    // 确保游戏窗口获得键盘焦点
     setFocus();
 }
 
@@ -305,27 +334,15 @@ void GameScreen::stopGame()
 void GameScreen::updateGame()
 {
     //背景滚动逻辑
-    m_backgroundOffset -= m_player->currentSpeed() * BACKGROUND_SCROLL_RATIO; // 让背景滚动得比地面慢，产生视差效果
-    // 2. 当背景完全移出左边界时，将其向右移动一个宽度的距离，实现无缝循环
-    //    而不是跳回0！
-    // if (m_backgroundOffset <= -width()) {
-    //     m_backgroundOffset += width();
-    // }
+    // 让背景滚动得比地面慢，产生视差效果
+    m_backgroundOffset -= m_player->currentSpeed() * BACKGROUND_SCROLL_RATIO;
 
-
-    // --- 玩家状态更新 (核心修改) ---
+    // 玩家状态更新
     if(m_player) {
-        // 1. 调用玩家自己的更新，这会根据当前速度改变位置
         m_player->update();
-
-
-
-        // --- 3. 【核心修改】更新世界偏移量 ---
+        // 更新世界偏移量
         // 世界的偏移量 = 玩家在世界中的X坐标 - 玩家在屏幕上固定的X坐标
         m_worldOffset = m_player->position().x() - PLAYER_FIXED_X;
-        // 2. 更新垂直镜头偏移 (新增逻辑)
-        // 定义一个角色在屏幕上活动的“安全窗口”
-
 
         // 计算角色当前在屏幕上的Y坐标
         qreal playerScreenY = m_player->position().y() - m_verticalOffset;
@@ -338,13 +355,9 @@ void GameScreen::updateGame()
             m_verticalOffset = m_player->position().y() - PLAYER_VISIBLE_Y_MIN;
         }
 
-        // 【核心】在这里驱动素材生成
-        // setupObstacles();
-        // setupMounts();
 
-
-        // --- 【新增】分数更新逻辑 ---
-        // 累加玩家在本帧中移动的距离 (我们使用速度的长度来近似)
+        // 分数更新逻辑
+        // 累加玩家在本帧中移动的距离 (使用速度的长度来近似)
         m_distanceTraveledForScore += m_player->velocity().length();
 
         // 检查累计的距离是否超过了10像素的阈值
@@ -363,8 +376,8 @@ void GameScreen::updateGame()
 
         checkCollisions();
 
-        // --- 【新增】清理已经远在屏幕左侧的障碍物 ---
-        const qreal cleanupMargin = 200.0; // 离屏幕左侧多远才开始清理
+        // 清理已经远在屏幕左侧的障碍物
+        const qreal cleanupMargin = 200.0;
 
 
         m_trees.erase(std::remove_if(m_trees.begin(), m_trees.end(),
@@ -387,7 +400,7 @@ void GameScreen::updateGame()
             return false;
         }), m_obstacles.end());
 
-        // 清理房屋 (用同样的方式清理其他所有列表)
+        // 清理房屋
         m_houses.erase(std::remove_if(m_houses.begin(), m_houses.end(),
             [this, cleanupMargin](House* house) {
             if (house->position().x() < m_worldOffset - cleanupMargin) {
@@ -397,7 +410,6 @@ void GameScreen::updateGame()
             return false;
         }), m_houses.end());
 
-        // (请用同样的方式添加对 m_seesaws, m_penguins, m_yetis 的清理)
         m_seesaws.erase(std::remove_if(m_seesaws.begin(), m_seesaws.end(),
             [this, cleanupMargin](Seesaw* seesaw) {
         if (seesaw->position().x() < m_worldOffset - cleanupMargin) {
@@ -425,10 +437,10 @@ void GameScreen::updateGame()
     }
 
 
-    // 【新增】雪崩警告逻辑
+    // 雪崩警告逻辑
     if (m_warningEnabled && m_player && m_avalanche)
     {
-        // 1. 计算玩家和雪崩的水平距离
+        // 计算玩家和雪崩的水平距离
         qreal distance = m_player->position().x() - m_avalanche->position().x();
 
         if (distance < 1080 * 2) {
@@ -462,19 +474,19 @@ void GameScreen::updateGame()
     for (Penguin* p : m_penguins) { p->update(); }
     for (Yeti* y : m_yetis) { y->update(); }
 
-    // --- 【新增】更新雪崩的位置 ---
+    // 更新雪崩的位置
     if(m_avalanche) {
         m_avalanche->update();
     }
 
-    // --- 【新增】检查游戏是否结束 ---
+    // 检查游戏是否结束
     if (m_avalanche && m_player) {
         // 计算雪崩右侧的X坐标
         qreal avalancheRightEdge = m_avalanche->position().x() + m_avalanche->width() / 2.0;
         // 判断雪崩的右侧是否触碰到玩家的X坐标（可以根据玩家的实际碰撞范围进行微调）
         if (avalancheRightEdge >= m_player->position().x()+30) {
             stopGame(); // 停止游戏
-            // --- 【核心修改】在显示对话框前，设置最终分数 ---
+            // 在显示对话框前，设置最终分数
             m_gameOverDialog->setScore(m_score);
             m_gameOverDialog->exec(); // 显示游戏结束对话框
             return; // 立刻返回，不再执行后续更新
@@ -482,11 +494,9 @@ void GameScreen::updateGame()
     }
 
 
-    // --- 新增：每帧都检查碰撞 ---
+    // 每帧都检查碰撞
 
-    checkTriggers(); // <-- 新增调用
-    // --- 新增：更新所有障碍物的状态 ---
-    // (这对于播放破碎动画很重要)
+    checkTriggers();
     for (Obstacle* obs : m_obstacles) {
         obs->update();
     }
@@ -501,6 +511,29 @@ void GameScreen::updateGame()
     // 请求重新绘制界面
     EffectManager::instance()->update();
 
+    if (m_player && m_avalanche) {
+        QString playerSpeedStr = QString::number(m_player->currentSpeed(), 'f', 1);
+        QString avalancheSpeedStr = QString::number(m_avalanche->velocity().length(), 'f', 1);
+        qreal distance = m_player->position().x() - (m_avalanche->position().x() + m_avalanche->width() / 2.0);
+        QString distanceStr = QString::number(distance, 'f', 0);
+
+        QString mountInfo = "";
+        if (m_player->isMounted()) {
+            switch(m_player->currentMountType()) {
+            case Player::Penguin: mountInfo = " (企鹅)"; break;
+            case Player::Yeti: mountInfo = " (雪怪)"; break;
+            case Player::BrokenYeti: mountInfo = " (损坏的雪怪)"; break;
+            default: break;
+            }
+        }
+
+        m_infoLabel->setText(QString("角色速度: %1%2 | 雪崩速度: %3 | 距离: %4")
+         .arg(playerSpeedStr)
+         .arg(mountInfo)
+         .arg(avalancheSpeedStr)
+         .arg(distanceStr));
+    }
+
     update();
 
     if(m_player) {
@@ -514,7 +547,6 @@ void GameScreen::updateGame()
 GameScreen::TerrainType GameScreen::getTerrainTypeAt(qreal x_pos)
 {
     // 这是一个简化的实现，实际需要更复杂的逻辑来根据 m_terrainPatternQueue 判断
-    // 但对于当前系统已经足够
     auto info = getPathInfoAt(m_snowPath, x_pos);
     qreal angle = abs(info.second);
     if(angle > 40) return Cliff;
@@ -525,9 +557,7 @@ GameScreen::TerrainType GameScreen::getTerrainTypeAt(qreal x_pos)
 // 判断当前窗口是否是地形模式的最后一段
 bool GameScreen::isLastSegmentOfPattern(qreal x_pos)
 {
-    // 简化逻辑：如果模式队列为空，我们就认为当前是最后一段
-    // 在我们的新架构中，当地形片段被取出用于生成时，队列就变短了
-    // 当为最后一段生成素材时，队列正好为空
+    // 如果模式队列为空，我们就认为当前是最后一段
     return m_terrainPatternQueue.isEmpty();
 }
 
@@ -539,7 +569,7 @@ void GameScreen::keyPressEvent(QKeyEvent *event)
     }
 
     if (m_player) {
-        // 【新增】如果玩家正在摔倒，任何按键都是为了让他快点起来
+        // 如果玩家正在摔倒，任何按键都是为了让他快点起来
         if (m_player->currentState == Player::Crashing) {
             m_player->reduceCrashTime();
             return; // 不再执行后续的跳跃等操作
@@ -556,11 +586,9 @@ void GameScreen::keyPressEvent(QKeyEvent *event)
 }
 
 
-// 用以下代码完整替换现有的 updateSnow() 函数
 void GameScreen::updateSnow()
 {
-    // --- 移除已经完全移出摄像机左侧的点 ---
-    // 【最终正确版】根据雪崩的位置来清理雪地
+    // 根据雪崩的位置来清理雪地
     if (m_avalanche) {
         // 只要雪崩存在，就确保它脚下的地形不被删除
         while (m_snowPoints.size() > 2 && m_snowPoints[1].x() < m_avalanche->position().x()-200) {
@@ -573,12 +601,12 @@ void GameScreen::updateSnow()
         }
     }
 
-    // --- 步骤 2：如果地形模式队列为空，则生成下一个模式 ---
+    // 如果地形模式队列为空，则生成下一个模式
     if (m_terrainPatternQueue.isEmpty()) {
         generateNextPattern();
     }
 
-    // --- 步骤 3：如果下一个地形片段未生成，则从队列中取一个类型来生成 ---
+    // 如果下一个地形片段未生成，则从队列中取一个类型来生成
     if (m_nextTerrainSegment.isEmpty()) {
         if (!m_terrainPatternQueue.isEmpty()) {
             TerrainType nextType = m_terrainPatternQueue.dequeue();
@@ -595,186 +623,25 @@ void GameScreen::updateSnow()
                 break;
             }
 
-            // 【核心新增】生成地形后，立刻为其填充素材
+            // 生成地形后，立刻为其填充素材
             if(!m_nextTerrainSegment.isEmpty()){
                 placeObjectsForSegment(nextType, m_nextTerrainSegment);
             }
-
         }
     }
 
-    // --- 步骤 4：如果下一个片段已就绪，且屏幕需要，则拼接到主地形上 ---
+    // 如果下一个片段已就绪，且屏幕需要，则拼接到主地形上
     if (!m_nextTerrainSegment.isEmpty() && m_snowPoints.last().x() < m_worldOffset + width() + TERRAIN_POINT_INTERVAL) {
         // 使用 move 提高效率，避免深拷贝
         m_snowPoints.append(std::move(m_nextTerrainSegment));
         m_nextTerrainSegment.clear();
     }
 
-    // --- 步骤 5：更新最终用于绘制的路径 ---
+    // 更新最终用于绘制的路径
     updateSnowPath();
 
 }
 
-
-/**
- * @brief 为刚刚生成的一个地形片段放置所有对应的素材。【绝对防重叠最终版】
- * 所有素材（包括障碍物和坐骑）的生成都必须通过isAreaClear检查，并共享同一个occupiedXPositions列表。
- */
-// void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& segmentPoints)
-// {
-//     ///地形的片段枚举：TerrainType
-//     ///当前生成的开始地形片段和结束片段位置：segmentPoints
-//     if (segmentPoints.isEmpty()) return;
-
-//     qreal segmentStartX = segmentPoints.first().x();
-//     qreal segmentEndX = segmentPoints.last().x();
-
-//     qreal windowStartX = floor(segmentStartX / 1080.0) * 1080.0;
-//     if (windowStartX < segmentStartX) {
-//         windowStartX += 1080.0;
-//     }
-
-//     while (windowStartX < segmentEndX) {
-//         if (windowStartX < 1500) {
-//             windowStartX += 1080.0;
-//             continue;
-//         }
-
-//         QList<qreal> occupiedXPositions;
-//         // 【重要修改】增大最小间距，确保即使是大物体之间也有足够空隙
-//         const qreal MIN_SPACING = 200.0;
-
-//         auto isAreaClear = [&](qreal candidateX) {
-//             for (qreal occupiedX : occupiedXPositions) {
-//                 if (qAbs(candidateX - occupiedX) < MIN_SPACING) {
-//                     return false;
-//                 }
-//             }
-//             return true;
-//         };
-
-//         // --- 设定生成顺序：从大物体/重要物体开始，最后放小物体 ---
-
-//         // 1. --- 告示牌 (最高优先级) ---
-//         if (windowStartX >= m_lastSignboardGenX + 10800.0) {
-//             if (type == Steep && isLastSegmentOfPattern(windowStartX)) {
-//                 qreal signboardX = windowStartX + 980.0;
-//                 if (isAreaClear(signboardX)) {
-//                     Signboard* sign = new Signboard(this);
-//                     sign->setPosition(getTerrainInfoAt(signboardX).first);
-//                     // --- 【核心修改在这里】 ---
-//                     sign->setDistance(m_nextSignboardDistance); // 1. 设置距离
-//                     m_nextSignboardDistance += 1000;            // 2. 为下一个告示牌增加1000米
-//                     m_signboards.append(sign);
-//                     m_lastSignboardGenX = windowStartX;
-//                     occupiedXPositions.append(signboardX);
-
-//                     // 【新增】在告示牌生成时，同时生成两个关联的金币
-//                     QPointF signboardPos = sign->position();
-
-//                     // 1. 创建左侧的金币
-//                     Coin* leftCoin = new Coin(this);
-//                     // 您可以在这里微调 X 和 Y 的偏移量来改变位置
-//                     leftCoin->setPosition(signboardPos - QPointF(200, 20)); // 在告示牌左边80像素，上方20像素
-//                     m_coins.append(leftCoin);
-
-//                     // 2. 创建上方的金币
-//                     Coin* topCoin = new Coin(this);
-//                     // 您可以在这里微调 Y 的偏移量来改变位置
-//                     topCoin->setPosition(signboardPos - QPointF(0, 190)); // 在告示牌正上方120像素
-//                     m_coins.append(topCoin);
-
-//                     // --- 添加结束 ---
-
-//                     m_lastSignboardGenX = windowStartX;
-//                     occupiedXPositions.append(signboardX);
-
-//                 }
-//             }
-//         }
-
-//         // 2. --- 房屋 ---
-//         if (QRandomGenerator::global()->generateDouble() < m_probHouse) {
-//             qreal houseCandidateX = 0;
-//             if (type == Gentle) {
-//                 qreal offset = QRandomGenerator::global()->bounded(100, 150);
-//                 houseCandidateX = (QRandomGenerator::global()->generateDouble() < 0.5)
-//                                       ? (windowStartX + 540.0 - offset)
-//                                       : (windowStartX + 740.0 + offset);
-//             } else if (type == Steep) {
-//                 houseCandidateX = windowStartX + 980.0;
-//             }
-
-//             if (houseCandidateX > 0 && isAreaClear(houseCandidateX)) {
-//                 House* house = new House(this);
-//                 house->setPosition(getTerrainInfoAt(houseCandidateX).first);
-//                 m_houses.append(house);
-//                 occupiedXPositions.append(houseCandidateX);
-//             }
-//         }
-
-//         // 3. --- 翘板 ---
-//         if (type == Steep || type == Cliff) {
-//             double seesawProb = (type == Steep) ? m_probSeesawOnSteep : m_probSeesawOnCliff;
-//             if (QRandomGenerator::global()->generateDouble() < seesawProb) {
-//                 qreal seesawCandidateX = (type == Steep) ? (windowStartX + 100.0) : (windowStartX + 25.0) + 100;
-//                 if (isAreaClear(seesawCandidateX)) {
-//                     qDebug()<<"生成的翘板x值为："<<seesawCandidateX;
-//                     Seesaw* seesaw = new Seesaw(this);
-//                     seesaw->setPosition(getTerrainInfoAt(seesawCandidateX).first);
-//                     m_seesaws.append(seesaw);
-//                     occupiedXPositions.append(seesawCandidateX);
-//                 }
-//             }
-//         }
-
-//         // 4. --- 坐骑 (企鹅和雪怪) ---
-//         // 【重要修改】调用改造后的函数，将占用列表和检查函数传进去
-//         generateMountsInWindow(windowStartX);
-
-//         // 5. --- 石头 (最后放置，用于填充剩余空间) ---
-//         qreal smallStoneX = windowStartX + 340.0;
-//         if (isAreaClear(smallStoneX)) {
-//             Stone* newSmallStone = new Stone(Stone::Small, this);
-//             newSmallStone->setPosition(getTerrainInfoAt(smallStoneX).first);
-//             m_obstacles.append(newSmallStone);
-//             occupiedXPositions.append(smallStoneX);
-//         }
-
-//         // 尝试在小石头旁边生成大石头
-//         if (QRandomGenerator::global()->generateDouble() < m_probBigStone) {
-//             qreal bigStoneX = smallStoneX + 20.0;
-//             if (isAreaClear(bigStoneX)) {
-//                 Stone* newBigStone = new Stone(Stone::Large, this);
-//                 newBigStone->setPosition(getTerrainInfoAt(bigStoneX).first);
-//                 m_obstacles.append(newBigStone);
-//                 occupiedXPositions.append(bigStoneX);
-//             }
-//         }
-
-//         // 【新增】在所有东西都放好之后，开始种树
-//         const qreal treeInterval = 125.0;
-//         const qreal treeSpacing = 20.0;
-//         // 从当前地形片段的开始位置循环到结束位置
-//         // for (qreal x = segmentPoints.first().x(); x < segmentPoints.last().x(); x += treeInterval)
-//         // {
-//         //     // 创建第一棵树
-//         //     Tree* tree1 = new Tree(this);
-//         //     tree1->setPosition(getTerrainInfoAt(x).first);
-//         //     m_trees.append(tree1);
-
-//         //     // 创建第二棵树，与第一棵间隔20px
-//         //     Tree* tree2 = new Tree(this);
-//         //     tree2->setPosition(getTerrainInfoAt(x + treeSpacing).first);
-//         //     m_trees.append(tree2);
-//         // }
-
-//         windowStartX += 1080.0;
-//     }
-// }
-
-
-// 在 gamescreen.cpp 中
 
 void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& segmentPoints)
 {
@@ -783,75 +650,100 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
     qreal segmentStartX = segmentPoints.first().x();
     qreal segmentEndX = segmentPoints.last().x();
 
+    // 在游戏刚开始的一小段距离内，不放置任何复杂物件，给玩家缓冲空间
     if (segmentEndX < 1500) return;
 
-
-    // --- 【核心】创建“中央协调员” ---
-    // 1. 创建一个列表，用来记录所有已放置物件的中心X坐标
+    // 创建一个列表，用来记录所有已放置物件的中心X坐标
     QList<qreal> occupiedXPositions;
     // 2. 定义所有物件之间必须保持的最小安全距离
-    const qreal MIN_SPACING = 150.0;
+    const qreal MIN_SPACING = 250.0;
 
-    // 3. 创建一个“查询函数”，任何物件在放置前都必须调用它
+    // 3. 创建一个查询函数，任何物件在放置前都必须调用它
     auto isAreaClear = [&](qreal candidateX) {
-        // 遍历所有已占用的位置
         for (qreal occupiedX : occupiedXPositions) {
-            // 如果新物件的位置与任何一个已存在的物件挨得太近，就返回 false
             if (qAbs(candidateX - occupiedX) < MIN_SPACING) {
-                return false;
+                return false; // 如果距离太近，则区域不干净
             }
         }
-        // 如果和所有已存在的物件都保持了安全距离，就返回 true
-        return true;
+        return true; // 区域干净
     };
 
-
-    // --- 1. “窗口化”的确定性生成：告示牌和翘板 ---
-    // 我们重新引入 windowStartX 的概念，但只为那些需要固定位置感的物件服务
+    // --- 统一生成逻辑 ---
+    // 以窗口为单位，在地形片段中循环生成素材
     qreal windowStartX = floor(segmentStartX / 1080.0) * 1080.0;
     if (windowStartX < segmentStartX) {
         windowStartX += 1080.0;
     }
 
     while (windowStartX < segmentEndX) {
-        // a. 告示牌和金币 (沿用之前的固定逻辑)
-        // 每10800px（10个窗口）尝试生成一个
+
+        // 1. 告示牌
+        // 每10800个单位（大约10个屏幕宽度）尝试生成一个
         if (windowStartX >= m_lastSignboardGenX + 10800.0) {
             if (type == Steep && isLastSegmentOfPattern(windowStartX)) {
-                Signboard* sign = new Signboard(this);
-                // 位置是固定的 windowStartX + 980
                 qreal signboardX = windowStartX + 980.0;
-                sign->setPosition(getTerrainInfoAt(signboardX).first);
-                sign->setDistance(m_nextSignboardDistance);
-                m_nextSignboardDistance += 1000;
-                m_signboards.append(sign);
-                m_lastSignboardGenX = windowStartX;
+                if (isAreaClear(signboardX)) {
+                    Signboard* sign = new Signboard(this);
+                    sign->setPosition(getTerrainInfoAt(signboardX).first);
+                    sign->setDistance(m_nextSignboardDistance);
+                    m_nextSignboardDistance += 1000;
+                    m_signboards.append(sign);
+                    occupiedXPositions.append(signboardX); // 登记位置
+                    m_lastSignboardGenX = windowStartX;
 
-                // 生成关联的金币
-                Coin* leftCoin = new Coin(this);
-                leftCoin->setPosition(sign->position() - QPointF(200, 20));
-                m_coins.append(leftCoin);
-                Coin* topCoin = new Coin(this);
-                topCoin->setPosition(sign->position() - QPointF(0, 190));
-                m_coins.append(topCoin);
-                // 【登记】放置成功后，立刻登记自己的位置
-                occupiedXPositions.append(signboardX);
+                    m_signboardCount++;
+
+                    // 在告示牌周围生成关联的金币
+                    if (m_signboardCount % 5 == 1) {
+                        Coin* leftCoin = new Coin(this);
+                        leftCoin->setPosition(sign->position() - QPointF(200, 20));
+                        m_coins.append(leftCoin);
+                        Coin* topCoin = new Coin(this);
+                        topCoin->setPosition(sign->position() - QPointF(0, 190));
+                        m_coins.append(topCoin);
+                    }
+                }
             }
         }
 
-        // b. 翘板 (在固定位置附近随机)
-        if (type == Steep || type == Cliff) {
-            if (QRandomGenerator::global()->generateDouble() < m_probSeesawOnSteep) {
-                qreal seesawCandidateX = windowStartX + 100.0 + QRandomGenerator::global()->bounded(-50, 50);
-                // 在一个固定的基准点 (windowStartX + 100) 附近，增加一个小的随机偏移
-                if (isAreaClear(seesawCandidateX)) {
-                    qreal seesawCandidateX = seesawCandidateX;
-                    Seesaw* seesaw = new Seesaw(this);
-                    seesaw->setPosition(getTerrainInfoAt(seesawCandidateX).first);
-                    m_seesaws.append(seesaw);
-                    // 【登记】放置成功后，立刻登记自己的位置
-                    occupiedXPositions.append(seesawCandidateX);
-                }
+        // 2. 房屋 (只在平缓地形)
+        if (type == Gentle && QRandomGenerator::global()->generateDouble() < m_probHouse) {
+            qreal houseCandidateX = windowStartX + QRandomGenerator::global()->bounded(200, 880);
+            if (isAreaClear(houseCandidateX)) {
+                House* house = new House(this);
+                qDebug()<<"房屋位置"<<houseCandidateX;
+                house->setPosition(getTerrainInfoAt(houseCandidateX).first);
+                m_houses.append(house);
+                occupiedXPositions.append(houseCandidateX); // 登记位置
+            }
+        }
+
+        // 3. 翘板 (只在陡峭或悬崖地形)
+        if ((type == Steep || type == Cliff) && QRandomGenerator::global()->generateDouble() < m_probSeesawOnSteep) {
+            qreal seesawCandidateX = windowStartX + 100.0 + QRandomGenerator::global()->bounded(-50, 50);
+            if (isAreaClear(seesawCandidateX)) {
+                Seesaw* seesaw = new Seesaw(this);
+                qDebug()<<"翘板位置"<<seesawCandidateX;
+                seesaw->setPosition(getTerrainInfoAt(seesawCandidateX).first);
+                m_seesaws.append(seesaw);
+                occupiedXPositions.append(seesawCandidateX); // 登记位置
+            }
+        }
+
+        // 4. 坐骑 (企鹅和雪怪)
+        generateMountsInWindow(windowStartX);
+
+
+        // 5. 石头 (用于填充剩余空间)
+        int stoneCount = QRandomGenerator::global()->bounded(0, 3); // 每屏最多生成0-2个石头
+        for (int i = 0; i < stoneCount; ++i) {
+            qreal stoneCandidateX = windowStartX + QRandomGenerator::global()->bounded(100, 980);
+            if (isAreaClear(stoneCandidateX)) {
+                Stone* newStone = new Stone(Stone::Small, this);
+                qDebug()<<"第"<<i<<"个石头："<<stoneCandidateX;
+                newStone->setPosition(getTerrainInfoAt(stoneCandidateX).first);
+                m_obstacles.append(newStone);
+                occupiedXPositions.append(stoneCandidateX); // 登记位置
             }
         }
 
@@ -859,71 +751,29 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
     }
 
 
-    // --- 2. “全范围”的随机生成：房屋、石头、树木 ---
-    // 这部分逻辑沿用我们上一版的随机生成，确保它们看起来是随心所欲的
-
-    // a. 房屋
-    if (type == Gentle && QRandomGenerator::global()->generateDouble() < m_probHouse) {
-        qreal houseCandidateX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX) + 200, static_cast<int>(segmentEndX) - 200);
-        // 【遵守规则】放置前先查询
-        if (isAreaClear(houseCandidateX)) {
-            House* house = new House(this);
-            house->setPosition(getTerrainInfoAt(houseCandidateX).first);
-            m_houses.append(house);
-            // 【登记】放置成功后，立刻登记自己的位置
-            occupiedXPositions.append(houseCandidateX);
-        }
-    }
-
-    // b. 石头
-    int stoneCount = QRandomGenerator::global()->bounded(1, 4);
-    for (int i = 0; i < stoneCount; ++i) {
-        qreal stoneCandidateX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX), static_cast<int>(segmentEndX));
-        // 【遵守规则】放置前先查询
-        if (isAreaClear(stoneCandidateX)) {
-            Stone* newStone = new Stone(Stone::Small, this);
-            newStone->setPosition(getTerrainInfoAt(stoneCandidateX).first);
-            m_obstacles.append(newStone);
-            // 【登记】放置成功后，立刻登记自己的位置
-            occupiedXPositions.append(stoneCandidateX);
-        }
-    }
-
-    // c. 树木
-    int treeCount = QRandomGenerator::global()->bounded(5, 15);
-    for (int i = 0; i < treeCount; ++i) {
-        qreal treeX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX), static_cast<int>(segmentEndX));
-        Tree* tree = new Tree(this);
-        tree->setPosition(getTerrainInfoAt(treeX).first + QPointF(0, -QRandomGenerator::global()->bounded(10, 30)));
-        tree->setScale(QRandomGenerator::global()->generateDouble() * 0.4 + 0.7);
-        m_trees.append(tree);
-    }
-
-    generateMountsInWindow(windowStartX);
+    // 6. 树木 (纯背景装饰，允许重叠)
+    qreal treeX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX), static_cast<int>(segmentEndX));
+    qDebug()<<"树木位置"<<treeX;
+    Tree* tree = new Tree(this);
+    tree->setPosition(getTerrainInfoAt(treeX).first);
+    m_trees.append(tree);
+    qDebug()<<"一次调用结束；";
 }
 
 
-/**
- * @brief 在一个1080px的窗口内，生成坐骑。【数量上限修正版】
- * @param windowStartX 当前生成窗口的起始X坐标。
- */
+
 void GameScreen::generateMountsInWindow(qreal windowStartX)
 {
     // 坐骑在游戏开始一段距离后才出现
     if (windowStartX < 2000) return;
-
-    // 【新增】定义企鹅和雪怪的最大数量上限，您可以根据需要调整这两个值
     const int MAX_PENGUINS = 5;
     const int MAX_YETIS = 2;
 
-    // --- 企鹅生成 ---
-    // 【新增】在尝试生成任何企鹅前，先检查总数
-    //qDebug()<<"尝试生成时的企鹅个数："<<m_penguins.size();
+    // 企鹅生成
     if (m_penguins.size() < MAX_PENGUINS) {
         double pChoice = QRandomGenerator::global()->generateDouble();
         if (pChoice < m_probPenguin_3) { // 10% 概率生成3个
             for(int i = 0; i < 3; ++i) {
-                // 【新增】即使在循环中，每次生成前也要再次检查，防止超出上限
                 if (m_penguins.size() >= MAX_PENGUINS) break;
                 Penguin* p = new Penguin(this);
                 p->setPosition(getTerrainInfoAt(windowStartX + 200 + i * 200).first - QPointF(0, 20));
@@ -931,14 +781,12 @@ void GameScreen::generateMountsInWindow(qreal windowStartX)
             }
         } else if (pChoice < m_probPenguin_2) { // 30% 概率生成2个
             for(int i = 0; i < 2; ++i) {
-                // 【新增】再次检查
                 if (m_penguins.size() >= MAX_PENGUINS) break;
                 Penguin* p = new Penguin(this);
                 p->setPosition(getTerrainInfoAt(windowStartX + 300 + i * 200).first - QPointF(0, 20));
                 m_penguins.append(p);
             }
         } else if (pChoice < m_probPenguin_1) { // 70% 概率生成1个
-            // 【新增】再次检查 (虽然外层已检查，但保持代码结构一致性)
             if (m_penguins.size() < MAX_PENGUINS) {
                 Penguin* p = new Penguin(this);
                 p->setPosition(getTerrainInfoAt(windowStartX + 400).first - QPointF(0, 20));
@@ -948,20 +796,17 @@ void GameScreen::generateMountsInWindow(qreal windowStartX)
     }
 
 
-    // --- 雪怪生成 ---
-    // 【新增】在尝试生成任何雪怪前，先检查总数
+    // 雪怪生成
     if (m_yetis.size() < MAX_YETIS) {
         double yChoice = QRandomGenerator::global()->generateDouble();
         if (yChoice < m_probYeti_2) { // 10% 概率生成2个
             for(int i = 0; i < 2; ++i) {
-                // 【新增】再次检查
                 if (m_yetis.size() >= MAX_YETIS) break;
                 Yeti* y = new Yeti(this);
                 y->setPosition(getTerrainInfoAt(windowStartX + 150 + i * 500).first - QPointF(0, 40));
                 m_yetis.append(y);
             }
         } else if (yChoice < m_probYeti_1) { // 30% 概率生成1个
-            // 【新增】再次检查
             if (m_yetis.size() < MAX_YETIS) {
                 Yeti* y = new Yeti(this);
                 y->setPosition(getTerrainInfoAt(windowStartX + 600).first - QPointF(0, 40));
@@ -972,7 +817,6 @@ void GameScreen::generateMountsInWindow(qreal windowStartX)
 }
 
 
-// 在 gamescreen.cpp 中添加这个全新的函数
 void GameScreen::generateNextPattern()
 {
     m_terrainPatternQueue.clear();
@@ -1002,18 +846,6 @@ void GameScreen::generateNextPattern()
     }
 }
 
-// void GameScreen::generateInitialTerrain()
-// {
-
-//     m_snowPoints.clear();
-//     m_nextTerrainSegment.clear(); // 确保“弹夹”是空的
-
-//     // 游戏开始时，总是先生成一段平缓的雪地
-//     generateGentleSlope(m_snowPoints, QPointF(0, 500));
-//     updateSnowPath();
-// }
-
-// 在 gamescreen.cpp 中，用下面的代码完整替换旧的 generateInitialTerrain 函数
 void GameScreen::generateInitialTerrain()
 {
     m_snowPoints.clear();
@@ -1021,8 +853,8 @@ void GameScreen::generateInitialTerrain()
     m_terrainPatternQueue.clear();
 
     // 游戏开始时，总是先生成一段平缓的雪地
-    // 从屏幕外 (-200) 开始生成，可以避免游戏开始时镜头突变或穿模的问题
-    generateGentleSlope(m_snowPoints, QPointF(-200, 500));
+    // 从雪地偏移量开始生成，可以避免游戏开始时镜头突变或穿模的问题
+    generateGentleSlope(m_snowPoints, QPointF(AVALANCHE_START_OFFSET_X, 500));
     updateSnowPath();
 }
 
@@ -1032,19 +864,19 @@ void GameScreen::updateSnowPath()
 
     // 开始构建路径
     m_snowPath = QPainterPath();
-    // 【核心修正】计算当前镜头的实际底部Y坐标
+    // 计算当前镜头的实际底部Y坐标
     qreal bottomY = m_verticalOffset + height();
-    // 1. 将起点移动到屏幕左下角 (使用新的底部坐标)
+    // 将起点移动到屏幕左下角 (使用新的底部坐标)
     m_snowPath.moveTo(m_snowPoints.first().x(), bottomY);
-    // 2. 画一条线到第一个地形点
+    // 画一条线到第一个地形点
     m_snowPath.lineTo(m_snowPoints.first());
-    // 3. 将所有地形点连接成一条曲线
+    // 将所有地形点连接成一条曲线
     for (int i = 1; i < m_snowPoints.size(); ++i) {
         m_snowPath.lineTo(m_snowPoints[i]);
     }
-    // 4. 从最后一个地形点画一条线到屏幕右下角 (使用新的底部坐标)
+    // 从最后一个地形点画一条线到屏幕右下角 (使用新的底部坐标)
     m_snowPath.lineTo(m_snowPoints.last().x(), bottomY);
-    // 5. 闭合路径，形成一个封闭的多边形
+    // 闭合路径，形成一个封闭的多边形
     m_snowPath.closeSubpath();
 }
 
@@ -1321,7 +1153,6 @@ void GameScreen::checkCollisions()
     bool isPlayerOnASurface = false;
     bool playerCollisionHandled = false; // 新的布尔标志
     bool playerJustMounted = false;
-
     // 【核心修复】只有在玩家不处于摔倒或站立状态时，才进行坐骑碰撞检测
     if (m_player->currentState != Player::Crashing && m_player->currentState != Player::StandingUp)
     {
@@ -1335,7 +1166,8 @@ void GameScreen::checkCollisions()
                 if (m_player->collisionRect().intersects((*it)->collisionRect()))
                 {
                     addScore(100);
-                    m_player->rideMount(Player::Yeti, (*it)->getAnimationFrames(), PLAYER_SPEED_ON_YETI, PLAYER_GRAVITY_ON_YETI);
+                    AudioManager::instance()->playSoundEffect(SfxType::YetiRoar);
+                    m_player->rideMount(Player::Yeti, (*it)->getAnimationFrames(), m_player->baseSpeed() * PLAYER_SPEED_MULTIPLIER_ON_YETI, PLAYER_GRAVITY_ON_YETI);
                     (*it)->deleteLater();
                     it = m_yetis.erase(it);
                     playerJustMounted = true;
@@ -1353,7 +1185,8 @@ void GameScreen::checkCollisions()
                 if (m_player->collisionRect().intersects((*it)->collisionRect()))
                 {
                     addScore(50);
-                    m_player->rideMount(Player::Penguin, (*it)->getAnimationFrames(), PLAYER_SPEED_ON_PENGUIN, PLAYER_GRAVITY_ON_PENGUIN);
+                    AudioManager::instance()->playSoundEffect(SfxType::PenguinChirp);
+                    m_player->rideMount(Player::Penguin, (*it)->getAnimationFrames(), m_player->baseSpeed() * PLAYER_SPEED_MULTIPLIER_ON_PENGUIN, PLAYER_GRAVITY_ON_PENGUIN);
                     (*it)->deleteLater();
                     it = m_penguins.erase(it);
                     playerJustMounted = true;
@@ -1579,22 +1412,18 @@ end_all_surface_checks:
         Coin* coin = *it;
         if (m_player->collisionRect().intersects(coin->collisionRect())) {
 
-            // AudioManager::instance()->playSoundEffect(SfxType::CoinCollect); // 1. 播放音效 (未来启用)
-
+            AudioManager::instance()->playSoundEffect(SfxType::CoinGet);
 
             qDebug() << "金币被吃掉了！暂停游戏，准备弹窗...";
             stopGame(); // 2. 暂停游戏 (未来启用)
-            // 【核心】显示卡片对话框，并根据返回值判断是否作出了选择
+            m_cardDialog->generateRandomCards(); // 【修改】调用新的抽卡函数
             if (m_cardDialog->exec() == QDialog::Accepted) {
-                CardData selectedCard = m_cardDialog->getSelectedCardData();
-                // 在这里应用卡片效果 (我们下一步实现)
-                qDebug() << "应用卡片效果:" << selectedCard.title;
 
-                // 【示例】如果卡片是加速，就直接修改玩家速度
-                if (selectedCard.type == CardEffectType::IncreaseSpeed) {
-                    // 这里我们暂时简单地增加当前速度
-                    // 理想情况下，Player类应该有一个专门的函数来处理这种临时buff
-                    // m_player->applySpeedBuff(selectedCard.value, 10.0);
+                CardData selectedCard = m_cardDialog->getSelectedCardData();
+
+                // --- 【核心修改】直接调用卡片自带的效果函数 ---
+                if (selectedCard.applyEffect) {
+                    selectedCard.applyEffect(this); // 把 this (GameScreen*) 传进去
                 }
             }
 
@@ -1846,4 +1675,80 @@ void GameScreen::generateCliff(QList<QPointF>& points, const QPointF& startPoint
         qreal x = currentPoint.x() + i * (flat2_length / flat2_segments);
         points.append(QPointF(x, currentPoint.y())); // Y坐标不变，保持水平
     }
+}
+
+
+// 在 src/ui/gamescreen.cpp 的文件末尾
+
+void GameScreen::applyScoreMultiplier(float multiplier, int duration)
+{
+    // 如果当前已经有一个更高倍率的效果正在持续，则不应用新的低倍率效果
+    if (m_scoreMultiplierTimer->isActive() && multiplier <= m_scoreMultiplier) {
+        qDebug() << "已存在更高或相同的得分倍率效果，忽略本次请求。";
+        return;
+    }
+
+    qDebug() << "得分倍率提升！" << multiplier << "x，持续" << duration << "毫秒。";
+    m_scoreMultiplier = multiplier;
+
+    // 停止上一个计时器（如果有的话），并用新的持续时间启动它
+    m_scoreMultiplierTimer->start(duration);
+}
+
+
+// 在 src/ui/gamescreen.cpp 的文件末尾添加
+
+void GameScreen::showDebugInfo()
+{
+    // 1. 暂停游戏
+    stopGame();
+
+    // 2. 创建一个模态对话框
+    m_debugDialog = new QDialog(this);
+    m_debugDialog->setWindowTitle("实时调试信息");
+    m_debugDialog->setFixedSize(400, 300);
+
+    // 3. 创建用于显示信息的标签
+    QLabel* infoContent = new QLabel(m_debugDialog);
+    infoContent->setWordWrap(true);
+    infoContent->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    infoContent->setStyleSheet("font-size: 14px; padding: 10px;");
+
+    // 4. 准备要显示的文本内容
+    QString debugText;
+    if (m_player) {
+        QString gravityStr = QString::number(m_player->currentGravity(), 'f', 2);
+        QString jumpForceStr = QString::number(m_player->jumpForce(), 'f', 2);
+        QString mountInfoText = "无";
+
+        if(m_player->isMounted()) {
+            mountInfoText = (m_player->currentMountType() == Player::Penguin) ? "企鹅" : "雪怪/损坏的雪怪";
+        }
+
+        debugText += QString("<b>角色状态:</b><br>");
+        debugText += QString("  - 当前坐骑: %1<br>").arg(mountInfoText);
+        debugText += QString("  - 重力加速度: %1<br>").arg(gravityStr);
+        debugText += QString("  - 弹跳力: %1<br><br>").arg(jumpForceStr);
+    }
+
+    debugText += QString("<b>游戏参数:</b><br>");
+    debugText += QString("  - 企鹅速度倍率: x%1<br>").arg(PLAYER_SPEED_MULTIPLIER_ON_PENGUIN);
+    debugText += QString("  - 雪怪速度倍率: x%1<br>").arg(PLAYER_SPEED_MULTIPLIER_ON_YETI);
+    debugText += QString("  - 当前分数倍率: x%1<br>").arg(QString::number(m_scoreMultiplier, 'f', 1));
+
+    infoContent->setText(debugText);
+
+    // 5. 设置对话框布局
+    QVBoxLayout* layout = new QVBoxLayout(m_debugDialog);
+    layout->addWidget(infoContent);
+    m_debugDialog->setLayout(layout);
+
+    // 6. 显示对话框，这会阻塞游戏循环直到对话框被关闭
+    m_debugDialog->exec();
+
+    // 7. 对话框关闭后，清理并继续游戏
+    delete m_debugDialog;
+    m_debugDialog = nullptr;
+    startGame();
+    this->setFocus(); // 确保焦点回到游戏窗口
 }

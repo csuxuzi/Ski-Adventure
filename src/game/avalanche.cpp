@@ -1,11 +1,12 @@
 #include "game/Avalanche.h"
 #include "ui/GameScreen.h" // 需要包含 GameScreen 头文件以调用其方法
 #include <QDebug>
-
+#include <QTimer> // 【新增】包含 QTimer
 Avalanche::Avalanche(GameScreen *gameScreen, QObject *parent)
     : GameObject(parent),
     m_gameScreen(gameScreen),
-    m_acceleration(0.002), // 一个较小的加速度，可以按需调整
+    m_baseAcceleration(0.002),
+    m_currentAcceleration(m_baseAcceleration),
     m_verticalOffset(0.0)  // 雪崩比地形高80个像素
 {
     if (!m_originalPixmap.load(":/assets/images/avalanche.png")) {
@@ -67,7 +68,7 @@ void Avalanche::update()
     // 3. 计算当前的速度大小，并施加加速度
     //    我们只在速度大小上应用加速度，方向由地形决定
     qreal currentSpeed = m_velocity.length();
-    currentSpeed += m_acceleration;
+    currentSpeed += m_currentAcceleration;
 
     // 4. 根据当前地形的坡度，计算出速度的方向
     qreal angleRad = qDegreesToRadians(terrainAngle);
@@ -78,4 +79,29 @@ void Avalanche::update()
 
     // 6. 根据最终的速度，更新雪崩的位置
     m_position += m_velocity.toPointF();
+}
+
+
+void Avalanche::applySlowDown(float slowDownFactor, int duration)
+{
+    qDebug() << "雪崩减速！效果持续" << duration << "毫秒。";
+    // 在基础加速度上施加减速效果
+    m_currentAcceleration += slowDownFactor;
+    // 如果减速后加速度变为负数，则将其限制为0，防止雪崩倒退
+    if (m_currentAcceleration < 0) {
+        m_currentAcceleration = 0;
+    }
+
+    // 创建一个一次性定时器，在持续时间结束后恢复基础加速度
+    QTimer::singleShot(duration, this, [this]() {
+        m_currentAcceleration = m_baseAcceleration;
+        qDebug() << "雪崩减速效果结束，恢复正常速度。";
+    });
+}
+
+void Avalanche::pushBack(float distance)
+{
+    qDebug() << "冲击波！雪崩被推后了" << distance << "像素。";
+    // 直接修改雪崩的X坐标，使其向左移动
+    m_position.rx() -= distance;
 }

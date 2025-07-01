@@ -123,15 +123,26 @@ Player::Player(QObject *parent) : GameObject(parent)
 }
 
 
-// 【新增】实现抽象出来的无敌函数
-void Player::startInvincibility()
+void Player::startInvincibility(int customDuration)
 {
+    // 如果已经处于无敌状态，则不执行任何操作
+    if (isInvincible) {
+        return;
+    }
+
+    // 决定最终的无敌持续时间
+    // 如果传入的 customDuration 大于 0，则使用它；否则，使用类中定义的默认时间 INVINCIBILITY_DURATION_MS
+    int finalDuration = (customDuration > 0) ? customDuration : INVINCIBILITY_DURATION_MS;
+
+    qDebug() << "玩家获得" << finalDuration << "毫秒的无敌效果！";
     isInvincible = true;
-    m_isFadingIn = true; // 【修改】开启淡入开关
-    // 无敌时间结束后，自动切换为淡出状态
-    QTimer::singleShot(INVINCIBILITY_DURATION_MS, this, [this](){
+    m_isFadingIn = true; // 触发光环的淡入效果
+
+    // 使用最终确定的持续时间来启动一次性定时器
+    QTimer::singleShot(finalDuration, this, [this]() {
         isInvincible = false;
-        m_isFadingIn = false; // 【修改】关闭淡入开关（即开始淡出）
+        m_isFadingIn = false; // 触发光环的淡出
+        qDebug() << "无敌效果结束。";
     });
 }
 
@@ -239,6 +250,7 @@ void Player::jump()
 // --- 新增：根据状态设置当前应该播放哪一套动画 ---
 void Player::setCurrentAnimation(PlayerState state)
 {
+    AudioManager::instance()->stopContinuousSound(SfxType::PlayerSlide);
     m_currentFrameIndex = 0; // 每次切换状态都从第一帧开始
     m_animationTimer->stop();  // 停止旧的动画
     // 【推荐修复】在启动计时器前，总是先恢复到默认的快节奏
@@ -250,6 +262,7 @@ void Player::setCurrentAnimation(PlayerState state)
             m_originalPixmap = m_slidingFrames.first();
             setScale(0.8);
         }
+        AudioManager::instance()->playContinuousSound(SfxType::PlayerSlide);
         break;
     case Jumping:
         // 跳跃状态，开始播放跳跃动画
@@ -530,6 +543,7 @@ void Player::crash()
             // 【简单、直接】不再判断坐骑类型，直接发出请求
             EffectManager::instance()->playEffect(EffectManager::EffectType::PenguinPoof, this->position());
             // 如果骑乘的是企鹅，则执行“企鹅消失”逻辑
+            AudioManager::instance()->playSoundEffect(SfxType::PenguinPoof);
             m_currentMount = None;                // 1. 将坐骑状态切回“无”
             m_mountAnimationFrames.clear();       // 2. 清空坐骑的动画帧
             m_currentSpeed = m_baseSpeed;         // 3. 将玩家速度恢复为基础速度
@@ -543,7 +557,7 @@ void Player::crash()
         else if (m_currentMount == Yeti) {
             // a. 切换为 BrokenYeti 状态，并传递其静态图片作为唯一的“动画帧”
             rideMount(BrokenYeti, {m_ridingBrokenYetiPixmap}, 16.0, 0.6); // 速度和重力略微降低
-
+            AudioManager::instance()->playSoundEffect(SfxType::YetiBroke);
             // b. 开启短暂无敌
             startInvincibility(); // <-- 【修改】调用新函数
             return; // 同样，直接返回，不执行标准摔倒
@@ -552,6 +566,7 @@ void Player::crash()
             // 【简单、直接】不再判断坐骑类型，直接发出请求
             EffectManager::instance()->playEffect(EffectManager::EffectType::YetiPoof, this->position());
             // --- 损坏的雪怪逻辑（第二条命）：彻底消失 ---
+            AudioManager::instance()->playSoundEffect(SfxType::YetiPoof);
             m_currentMount = None;
             m_currentSpeed = m_baseSpeed;
             m_currentGravity = GRAVITY;

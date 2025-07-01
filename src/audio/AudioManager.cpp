@@ -100,6 +100,20 @@ void AudioManager::loadAllSoundEffects()
     createAndLoadEffect(SfxType::StoneShatter, "qrc:/assets/audio/sfx/stone_shatter.wav");
     createAndLoadEffect(SfxType::HouseShatter, "qrc:/assets/audio/sfx/house_shatter.wav");
     createAndLoadEffect(SfxType::SeesawShatter, "qrc:/assets/audio/sfx/seesaw_shatter.wav");
+    createAndLoadEffect(SfxType::PlayerSlide,  "qrc:/assets/audio/sfx/player_slide.wav");
+    // --- 【在这里新增以下加载代码】 ---
+    createAndLoadEffect(SfxType::YetiRoar,       "qrc:/assets/audio/sfx/yeti_roar.wav");
+    createAndLoadEffect(SfxType::PenguinChirp,   "qrc:/assets/audio/sfx/penguin_chirp.wav");
+    createAndLoadEffect(SfxType::PenguinPoof,    "qrc:/assets/audio/sfx/penguin_poof.wav");
+    createAndLoadEffect(SfxType::YetiPoof,       "qrc:/assets/audio/sfx/yeti_poof2.wav");
+    createAndLoadEffect(SfxType::YetiBroke,       "qrc:/assets/audio/sfx/yeti_poof1.wav");
+    createAndLoadEffect(SfxType::CoinGet,        "qrc:/assets/audio/sfx/coin_get.wav");
+    createAndLoadEffect(SfxType::SeesawSlide,    "qrc:/assets/audio/sfx/house_slide.wav");
+
+    // --- 【在这里新增一行，设置滑行音效为无限循环】 ---
+    if (m_soundEffects.contains(SfxType::PlayerSlide)) {
+        m_soundEffects[SfxType::PlayerSlide]->setLoopCount(QSoundEffect::Infinite);
+    }
 }
 
 
@@ -109,7 +123,10 @@ bool AudioManager::isDestructive(SfxType type) const
     // 在这里定义哪些音效属于“破坏性”
     return type == SfxType::StoneShatter ||
            type == SfxType::HouseShatter ||
-           type == SfxType::SeesawShatter;
+           type == SfxType::SeesawShatter||
+           // --- 【在这里新增两行】 ---
+           type == SfxType::PenguinPoof ||
+           type == SfxType::YetiPoof;
 }
 
 // 【核心实现】高性能的播放函数
@@ -119,8 +136,8 @@ void AudioManager::playSoundEffect(SfxType type)
         return;
     }
 
-    // 判断请求的音效是否为需要冷却的“破坏性”音效
-    if (isDestructive(type)) {
+    // 【核心修改】判断音效是否为需要冷却的类型（破坏性 或 坐骑叫声）
+    if (isDestructive(type) || isMountSound(type)) {
         // 如果是，则检查共享计时器是否已超过冷却时间
         if (m_destructiveSfxTimer.elapsed() > DESTRUCTIVE_SFX_COOLDOWN_MS) {
             // 时间足够长，可以播放
@@ -130,7 +147,7 @@ void AudioManager::playSoundEffect(SfxType type)
         }
         // 如果时间不够长，则直接忽略本次播放请求，不做任何事
     } else {
-        // 如果不是破坏性音效（如按钮点击、玩家摔倒），则不受影响，直接播放
+        // 如果不是需要冷却的音效（如按钮点击），则不受影响，直接播放
         m_soundEffects[type]->play();
     }
 }
@@ -217,4 +234,37 @@ float AudioManager::getMusicVolume() const
 float AudioManager::getSfxVolume() const
 {
     return m_sfxVolume;
+}
+
+
+// 在 src/audio/AudioManager.cpp 的文件末尾添加
+
+void AudioManager::playContinuousSound(SfxType type)
+{
+    if (!m_sfxEnabled || !m_soundEffects.contains(type)) {
+        return;
+    }
+    // 只在音效没有播放时才开始播放，避免重复
+    if (m_soundEffects[type]->isPlaying() == false) {
+        m_soundEffects[type]->play();
+    }
+}
+
+void AudioManager::stopContinuousSound(SfxType type)
+{
+    if (!m_sfxEnabled || !m_soundEffects.contains(type)) {
+        return;
+    }
+    // 只在音效正在播放时才停止
+    if (m_soundEffects[type]->isPlaying()) {
+        m_soundEffects[type]->stop();
+    }
+}
+
+
+bool AudioManager::isMountSound(SfxType type) const
+{
+    // 在这里定义哪些音效属于“坐骑叫声”
+    return type == SfxType::PenguinChirp ||
+           type == SfxType::YetiRoar;
 }
