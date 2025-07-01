@@ -23,13 +23,13 @@ AudioManager::AudioManager(QObject *parent)
 
     m_musicAudioOutput->setVolume(0.7); // 设置初始音乐音量为 70%
 
-    // 【核心】在构造函数中，一次性加载所有音效到内存
+    // 在构造函数中，一次性加载所有音效到内存
     loadBgmLists();
     loadAllSoundEffects();
     qDebug() << "Audio Manager initialized and all sound effects pre-loaded.";
-    // 【核心修改】连接 BGM 播放器的状态变化信号到我们的处理槽函数
+    // 连接 BGM 播放器的状态变化信号到我们的处理槽函数
     connect(m_musicPlayer, &QMediaPlayer::mediaStatusChanged, this, &AudioManager::onBgmStatusChanged);
-    // 【重新引入】启动冷却计时器
+    // 启动冷却计时器
     m_destructiveSfxTimer.start();
 }
 
@@ -75,18 +75,16 @@ void AudioManager::playBgm(BgmType type)
         }
     }
 
-// 【核心实现】预加载函数
+// 预加载函数
 void AudioManager::loadAllSoundEffects()
 {
-    // 这个辅助 lambda 表达式帮助我们创建并加载音效对象
+    // 创建并加载音效对象
     auto createAndLoadEffect = [&](SfxType type, const QString& path) {
         QSoundEffect* effect = new QSoundEffect(this);
 
-        // 【关键】setSource 只在这里被调用一次！
-        // 这会将音频文件从资源（.qrc）加载到内存中。
         effect->setSource(QUrl(path));
 
-        // 设置默认音量，循环次数等，这些设置也会被保留
+        // 设置默认音量，循环次数等
         effect->setVolume(m_sfxVolume);
         effect->setLoopCount(1);
 
@@ -94,14 +92,12 @@ void AudioManager::loadAllSoundEffects()
         m_soundEffects[type] = effect;
     };
 
-    // --- 在这里列出您所有的独立音效 ---
     createAndLoadEffect(SfxType::ButtonClick, "qrc:/assets/audio/sfx/button_click.wav");
     createAndLoadEffect(SfxType::PlayerCrash, "qrc:/assets/audio/sfx/player_crash.wav");
     createAndLoadEffect(SfxType::StoneShatter, "qrc:/assets/audio/sfx/stone_shatter.wav");
     createAndLoadEffect(SfxType::HouseShatter, "qrc:/assets/audio/sfx/house_shatter.wav");
     createAndLoadEffect(SfxType::SeesawShatter, "qrc:/assets/audio/sfx/seesaw_shatter.wav");
     createAndLoadEffect(SfxType::PlayerSlide,  "qrc:/assets/audio/sfx/player_slide.wav");
-    // --- 【在这里新增以下加载代码】 ---
     createAndLoadEffect(SfxType::YetiRoar,       "qrc:/assets/audio/sfx/yeti_roar.wav");
     createAndLoadEffect(SfxType::PenguinChirp,   "qrc:/assets/audio/sfx/penguin_chirp.wav");
     createAndLoadEffect(SfxType::PenguinPoof,    "qrc:/assets/audio/sfx/penguin_poof.wav");
@@ -110,33 +106,29 @@ void AudioManager::loadAllSoundEffects()
     createAndLoadEffect(SfxType::CoinGet,        "qrc:/assets/audio/sfx/coin_get.wav");
     createAndLoadEffect(SfxType::SeesawSlide,    "qrc:/assets/audio/sfx/house_slide.wav");
 
-    // --- 【在这里新增一行，设置滑行音效为无限循环】 ---
     if (m_soundEffects.contains(SfxType::PlayerSlide)) {
         m_soundEffects[SfxType::PlayerSlide]->setLoopCount(QSoundEffect::Infinite);
     }
 }
 
 
-// 【新增】辅助函数的实现
 bool AudioManager::isDestructive(SfxType type) const
 {
-    // 在这里定义哪些音效属于“破坏性”
+    // 在这里定义哪些音效属于“破坏性”，方便加锁
     return type == SfxType::StoneShatter ||
            type == SfxType::HouseShatter ||
            type == SfxType::SeesawShatter||
-           // --- 【在这里新增两行】 ---
            type == SfxType::PenguinPoof ||
            type == SfxType::YetiPoof;
 }
 
-// 【核心实现】高性能的播放函数
 void AudioManager::playSoundEffect(SfxType type)
 {
     if (!m_sfxEnabled || !m_soundEffects.contains(type)) {
         return;
     }
 
-    // 【核心修改】判断音效是否为需要冷却的类型（破坏性 或 坐骑叫声）
+    // 判断音效是否为需要冷却的类型（破坏性 或 坐骑叫声）
     if (isDestructive(type) || isMountSound(type)) {
         // 如果是，则检查共享计时器是否已超过冷却时间
         if (m_destructiveSfxTimer.elapsed() > DESTRUCTIVE_SFX_COOLDOWN_MS) {
@@ -152,13 +144,7 @@ void AudioManager::playSoundEffect(SfxType type)
     }
 }
 
-// void AudioManager::playMainMenuMusic()
-// {
-//     if (!m_musicEnabled) return;
-//     m_musicPlayer->setSource(QUrl("qrc:/assets/audio/music/main_menu.mp3"));
-//     m_musicPlayer->setLoops(QMediaPlayer::Infinite);
-//     m_musicPlayer->play();
-// }
+
 
 void AudioManager::stopMusic()
 {
@@ -172,7 +158,6 @@ void AudioManager::setMusicEnabled(bool enabled)
         stopMusic();
     } else {
         if(m_musicPlayer->playbackState() != QMediaPlayer::PlayingState) {
-            // playMainMenuMusic();
             playBgm(m_currentBgm);
         }
     }
@@ -181,13 +166,6 @@ void AudioManager::setMusicEnabled(bool enabled)
 void AudioManager::setSfxEnabled(bool enabled)
 {
     m_sfxEnabled = enabled;
-    // 未来在这里处理音效的逻辑
-    // 如果禁用音效，可以停止所有正在播放的音效
-    // if (!enabled) {
-    //     for (QSoundEffect* effect : qAsConst(m_soundEffects)) {
-    //         effect->stop();
-    //     }
-    // }
 }
 
 
@@ -236,8 +214,6 @@ float AudioManager::getSfxVolume() const
     return m_sfxVolume;
 }
 
-
-// 在 src/audio/AudioManager.cpp 的文件末尾添加
 
 void AudioManager::playContinuousSound(SfxType type)
 {

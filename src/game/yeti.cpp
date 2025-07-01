@@ -7,8 +7,7 @@ const int YETI_ANIMATION_FRAME_RATE = 30; // 雪怪动画帧率 (ms)
 Yeti::Yeti(QObject *parent)
     : Mount(parent), m_gravity(0.8) // 雪怪的重力设为0.8，比企鹅重
 {
-    // 1. 加载雪怪的移动动画帧
-    // 【注意】您需要准备好 yeti_1.png, yeti_2.png 等图片
+    // 加载雪怪的移动动画帧
     for (int i = 1; i <= 16; ++i) {
         QPixmap frame;
         QString path = QString(":/assets/images/yeti/yeti_%1.png").arg(i);
@@ -20,7 +19,7 @@ Yeti::Yeti(QObject *parent)
     }
 
 
-    // 2. 初始化动画系统
+    // 初始化动画系统
     if (!m_movingFrames.isEmpty()) {
         m_originalPixmap = m_movingFrames.first();
         setScale(0.9); // 雪怪更大一些

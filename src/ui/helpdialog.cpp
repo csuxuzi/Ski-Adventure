@@ -18,7 +18,6 @@ HelpDialog::HelpDialog(QWidget *parent)
 
 void HelpDialog::loadHelpImages()
 {
-    // 请确保您已准备好 4 张帮助图片，并已添加到资源文件中
     for (int i = 1; i <= 4; ++i) {
         QPixmap image(QString(":/assets/images/help/help_%1.png").arg(i));
         if (image.isNull()) {
@@ -69,15 +68,15 @@ void HelpDialog::showNextImage()
     }
 }
 
-// 核心函数：更新图片和箭头状态
+// 更新图片和箭头状态
 void HelpDialog::updateUI()
 {
     if (m_helpImages.isEmpty()) return;
 
-    // 1. 更新显示的图片
+    // 更新显示的图片
     m_imageLabel->setPixmap(m_helpImages[m_currentIndex]);
 
-    // 2. 根据当前索引，更新箭头的可用状态
+    // 根据当前索引，更新箭头的可用状态
     m_leftArrow->setEnabled(m_currentIndex > 0);
     m_rightArrow->setEnabled(m_currentIndex < m_helpImages.size() - 1);
 }

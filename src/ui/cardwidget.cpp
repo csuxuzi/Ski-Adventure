@@ -31,53 +31,38 @@ void CardWidget::setupUI()
     setLayout(layout);
 }
 
-// void CardWidget::setCardData(const CardData &data)
-// {
-//     m_cardData = data;
-//     m_titleLabel->setText(data.title);
-//     m_descriptionLabel->setText(data.description);
-// }
+
 
 const CardData& CardWidget::getCardData() const
 {
     return m_cardData;
 }
 
-// // 根据是否被选中，改变边框颜色来高亮
-// void CardWidget::setSelected(bool selected)
-// {
-//     m_isSelected = selected;
-//     if (m_isSelected) {
-//         setStyleSheet("CardWidget { background-color: #5A7D9E; border-radius: 15px; border: 4px solid #FFD700; }");
-//     } else {
-//         setStyleSheet("CardWidget { background-color: #4A5D7E; border-radius: 15px; border: 3px solid #333; }");
-//     }
-// }
 
 void CardWidget::setCardData(const CardData &data)
 {
     m_cardData = data;
     m_titleLabel->setText(m_cardData.title);
     m_descriptionLabel->setText(m_cardData.description);
-    // 【新增】数据变化后，立即更新样式
+    // 数据变化后，立即更新样式
     updateStyle();
 }
 
 void CardWidget::setSelected(bool selected)
 {
     m_isSelected = selected;
-    // 【新增】选中状态变化后，立即更新样式
+    // 选中状态变化后，立即更新样式
     updateStyle();
 }
 
-// --- 【新增】核心的样式更新函数 ---
+// 核心的样式更新函数
 void CardWidget::updateStyle()
 {
     QString styleSheet = "CardWidget {"
                          "  background-color: #F0F0F0;"
                          "  border-radius: 10px;";
 
-    // 1. 根据稀有度设置边框颜色
+    // 根据稀有度设置边框颜色
     QString borderColor;
     switch (m_cardData.rarity) {
     case CardRarity::Common:
@@ -94,7 +79,7 @@ void CardWidget::updateStyle()
 
     styleSheet += "}";
 
-    // 2. 如果被选中，额外叠加红色聚焦框
+    // 如果被选中，额外叠加红色聚焦框
     if (m_isSelected) {
         styleSheet += "CardWidget:hover {"
                       "  border: 3px solid red;"
@@ -106,7 +91,6 @@ void CardWidget::updateStyle()
     this->setStyleSheet(styleSheet);
 }
 
-// --- 【在这里添加下面这个新函数】 ---
 void CardWidget::paintEvent(QPaintEvent* event)
 {
     Q_UNUSED(event);

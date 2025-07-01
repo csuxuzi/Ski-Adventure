@@ -52,10 +52,6 @@ void SettingsDialog::setupUI()
     QLabel* sfxLabel = new QLabel("音效", this);
     musicLabel->setStyleSheet("font-size: 16px;");
     sfxLabel->setStyleSheet("font-size: 16px;");
-
-    // QPushButton* closeButton = new QPushButton("关闭", this);
-    // connect(closeButton, &QPushButton::clicked, this, &QDialog::accept);
-
     QHBoxLayout* musicLayout = new QHBoxLayout();
     musicLayout->addWidget(m_musicIcon);
     musicLayout->addWidget(musicLabel);
@@ -72,13 +68,11 @@ void SettingsDialog::setupUI()
     mainLayout->addLayout(musicLayout);
     mainLayout->addLayout(sfxLayout);
     mainLayout->addStretch();
-    //mainLayout->addWidget(closeButton, 0, Qt::AlignCenter);
     setLayout(mainLayout);
 }
 
 void SettingsDialog::onMusicIconClicked()
 {
-    // 点击图标时，只在0和70之间切换
     if (m_musicSlider->value() > 0) {
         m_musicSlider->setValue(0);
     } else {

@@ -51,7 +51,7 @@ const qreal PLAYER_SPEED_MULTIPLIER_ON_YETI = 1.6;    // 骑上雪怪后，速�
 const qreal PLAYER_GRAVITY_ON_PENGUIN = 0.3; // 角色骑上企鹅后的速度
 const qreal PLAYER_GRAVITY_ON_YETI = 0.8;    // 角色骑上雪怪后的速度
 // 视觉效果相关
-const qreal BACKGROUND_SCROLL_RATIO = 0.1; //背景滚动速度是角色速度的10%// 【新增】定义企鹅和雪怪的最大数量上限，您可以根据需要调整这两个值
+const qreal BACKGROUND_SCROLL_RATIO = 0.1; //背景滚动速度是角色速度的10%// 定义企鹅和雪怪的最大数量上限
 const int MAX_PENGUINS = 5;
 const int MAX_YETIS = 2;
 
@@ -124,44 +124,42 @@ GameScreen::GameScreen(QWidget *parent)
 
     m_cardDialog = new CardSelectionDialog(this); // 创建实例
 
-    // 2. 创建并连接计时器，用于驱动游戏循环
+    // 创建并连接计时器，用于驱动游戏循环
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &GameScreen::updateGame);
     //connect(m_timer, &QTimer::timeout, this, &GameScreen::updateSnow);
 
-    // 3. 初始化地形
+    // 初始化地形
     generateInitialTerrain();
 
-    // 4. 创建并放置玩家
+    // 创建并放置玩家
     resetGameState();
 
     setFocusPolicy(Qt::StrongFocus); // 确保 GameScreen 能接收键盘事件
 
-    // --- 新增：在构造时调用，放置所有障碍物 ---
+    // 在构造时调用，放置所有障碍物
     //setupObstacles();
 }
 
-// 【新增】在 GameScreen.cpp 中添加 addScore 函数的完整实现
 void GameScreen::addScore(int baseScore)
 {
-    // 1. 计算最终得分（基础分 * 倍率）
+    // 计算最终得分（基础分 * 倍率）
     int finalScore = static_cast<int>(baseScore * m_scoreMultiplier);
 
-    // 2. 累加到总分
+    // 累加到总分
     m_score += finalScore;
 
-    // 3. 更新主UI上的总分显示
+    // 更新主UI上的总分显示
     m_scoreLabel->setText(QString::number(m_score));
 
-    // 4. 【关键】通知特效总管，在分数标签附近播放一个跳字动画
+    // 通知特效总管，在分数标签附近播放一个跳字动画
     QPointF scoreLabelPos = m_scoreLabel->pos();
-    // 我们让跳字在分数标签的左边一点、靠下一点的位置出现
     QPointF effectPos = scoreLabelPos + QPointF(-30, m_scoreLabel->height() + 10);
     EffectManager::instance()->playFloatingScoreEffect(finalScore, effectPos);
 }
 
 
-// --- 【新增】UI设置函数的实现 ---
+// UI设置函数的实现
 void GameScreen::setupUI()
 {
     // 创建暂停按钮
@@ -213,7 +211,7 @@ void GameScreen::setupUI()
     connect(m_debugButton, &QPushButton::clicked, this, &GameScreen::showDebugInfo);
 
 
-    // 3. 连接所有信号与槽
+    // 连接所有信号与槽
     connect(m_pauseButton, &QPushButton::clicked, this, &GameScreen::onPauseButtonClicked);
     connect(m_pauseDialog, &PauseDialog::resumeClicked, this, &GameScreen::startGame); // 继续游戏就是重启计时器
     connect(m_pauseDialog, &PauseDialog::restartClicked, this, &GameScreen::restartGame);
@@ -322,7 +320,7 @@ void GameScreen::startGame()
 {
     // 每 16 毫秒更新一次，约等于 60 FPS
     m_timer->start(16);
-    // 【新增】在这里，为新的一局游戏启动10秒的警告倒计时
+    // 在这里，为新的一局游戏启动10秒的警告倒计时
     m_warningDelayTimer->start(10000);
 }
 
@@ -546,7 +544,6 @@ void GameScreen::updateGame()
 
 GameScreen::TerrainType GameScreen::getTerrainTypeAt(qreal x_pos)
 {
-    // 这是一个简化的实现，实际需要更复杂的逻辑来根据 m_terrainPatternQueue 判断
     auto info = getPathInfoAt(m_snowPath, x_pos);
     qreal angle = abs(info.second);
     if(angle > 40) return Cliff;
@@ -561,7 +558,7 @@ bool GameScreen::isLastSegmentOfPattern(qreal x_pos)
     return m_terrainPatternQueue.isEmpty();
 }
 
-// --- 新增：实现键盘事件处理函数 ---
+// 实现键盘事件处理函数
 void GameScreen::keyPressEvent(QKeyEvent *event)
 {
     if (event->isAutoRepeat()) {
@@ -655,10 +652,10 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
 
     // 创建一个列表，用来记录所有已放置物件的中心X坐标
     QList<qreal> occupiedXPositions;
-    // 2. 定义所有物件之间必须保持的最小安全距离
+    // 定义所有物件之间必须保持的最小安全距离
     const qreal MIN_SPACING = 250.0;
 
-    // 3. 创建一个查询函数，任何物件在放置前都必须调用它
+    // 创建一个查询函数，任何物件在放置前都必须调用它
     auto isAreaClear = [&](qreal candidateX) {
         for (qreal occupiedX : occupiedXPositions) {
             if (qAbs(candidateX - occupiedX) < MIN_SPACING) {
@@ -668,7 +665,7 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
         return true; // 区域干净
     };
 
-    // --- 统一生成逻辑 ---
+    // 统一生成逻辑
     // 以窗口为单位，在地形片段中循环生成素材
     qreal windowStartX = floor(segmentStartX / 1080.0) * 1080.0;
     if (windowStartX < segmentStartX) {
@@ -677,7 +674,7 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
 
     while (windowStartX < segmentEndX) {
 
-        // 1. 告示牌
+        // 告示牌
         // 每10800个单位（大约10个屏幕宽度）尝试生成一个
         if (windowStartX >= m_lastSignboardGenX + 10800.0) {
             if (type == Steep && isLastSegmentOfPattern(windowStartX)) {
@@ -706,7 +703,7 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
             }
         }
 
-        // 2. 房屋 (只在平缓地形)
+        // 房屋 (只在平缓地形)
         if (type == Gentle && QRandomGenerator::global()->generateDouble() < m_probHouse) {
             qreal houseCandidateX = windowStartX + QRandomGenerator::global()->bounded(200, 880);
             if (isAreaClear(houseCandidateX)) {
@@ -718,7 +715,7 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
             }
         }
 
-        // 3. 翘板 (只在陡峭或悬崖地形)
+        // 翘板 (只在陡峭或悬崖地形)
         if ((type == Steep || type == Cliff) && QRandomGenerator::global()->generateDouble() < m_probSeesawOnSteep) {
             qreal seesawCandidateX = windowStartX + 100.0 + QRandomGenerator::global()->bounded(-50, 50);
             if (isAreaClear(seesawCandidateX)) {
@@ -730,11 +727,11 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
             }
         }
 
-        // 4. 坐骑 (企鹅和雪怪)
+        // 坐骑 (企鹅和雪怪)
         generateMountsInWindow(windowStartX);
 
 
-        // 5. 石头 (用于填充剩余空间)
+        // 石头 (用于填充剩余空间)
         int stoneCount = QRandomGenerator::global()->bounded(0, 3); // 每屏最多生成0-2个石头
         for (int i = 0; i < stoneCount; ++i) {
             qreal stoneCandidateX = windowStartX + QRandomGenerator::global()->bounded(100, 980);
@@ -751,7 +748,7 @@ void GameScreen::placeObjectsForSegment(TerrainType type, const QList<QPointF>& 
     }
 
 
-    // 6. 树木 (纯背景装饰，允许重叠)
+    // 树木 (纯背景装饰，允许重叠)
     qreal treeX = QRandomGenerator::global()->bounded(static_cast<int>(segmentStartX), static_cast<int>(segmentEndX));
     qDebug()<<"树木位置"<<treeX;
     Tree* tree = new Tree(this);
@@ -895,7 +892,7 @@ void GameScreen::resetGameState()
     m_player->setRotation(terrain_info.second);
 
 
-    // --- 【核心修改】根据坡度设置初始速度方向，大小由玩家自己决定 ---
+    // 根据坡度设置初始速度方向，大小由玩家自己决定
     qreal initialAngleRad = qDegreesToRadians(m_player->rotation());
     QVector2D initial_direction(qCos(initialAngleRad), qSin(initialAngleRad));
 
@@ -903,14 +900,14 @@ void GameScreen::resetGameState()
     m_player->setVelocity(initial_direction * m_player->currentSpeed());
 
     m_avalanche = new Avalanche(this, this);
-    // a. 计算雪崩的初始X坐标
+    // 计算雪崩的初始X坐标
     qreal avalancheStartX = m_player->position().x() + AVALANCHE_START_OFFSET_X;
-    // b. 获取该位置的地形信息
+    // 获取该位置的地形信息
     auto avalancheTerrainInfo = getTerrainInfoAt(avalancheStartX);
-    // c. 设置雪崩的初始位置
+    // 设置雪崩的初始位置
     m_avalanche->setPosition(avalancheTerrainInfo.first);
 
-    // d. 【核心】设置雪崩的初始速度，使其方向与初始地形平行
+    // 设置雪崩的初始速度，使其方向与初始地形平行
     qreal initialPlayerSpeed = m_player->velocity().length();
     qreal initialAvalancheSpeed = initialPlayerSpeed * AVALANCHE_SPEED_MULTIPLIER;
     qreal initialAvalancheAngleRad = qDegreesToRadians(avalancheTerrainInfo.second);
@@ -952,15 +949,14 @@ void GameScreen::paintEvent(QPaintEvent *event)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // --- 绘制背景 (有视差滚动) ---
+    // 绘制背景 (有视差滚动)
     painter.save();
     qreal bg_x = fmod(m_backgroundOffset, width());
 
     int x1_base = static_cast<int>(bg_x);
     int w = width();
 
-    // 3. 【最关键】绘制三张图，每一张都比前一张“提前”2个像素，形成覆盖
-    //    绘制顺序：左 -> 中 -> 右，后画的会盖住先画的
+    // 绘制三张图，每一张都比前一张“提前”2个像素，形成覆盖
     painter.drawPixmap(x1_base - w, 0, w, height(), m_backgroundPixmap);       // 左边的图，位置不变
     painter.drawPixmap(x1_base - 2, 0, w, height(), m_backgroundPixmap);      // 中间的图，提前2像素，覆盖左图
     painter.drawPixmap(x1_base + w - 4, 0, w, height(), m_backgroundPixmap); // 右边的图，再提前2像素，覆盖中图
@@ -968,23 +964,23 @@ void GameScreen::paintEvent(QPaintEvent *event)
     painter.restore();
 
 
-    // --- 【核心修改】绘制游戏世界 ---
+    // 绘制游戏世界
     painter.save();
     // 将整个坐标系向左移动 worldOffset 的距离
     painter.translate(-m_worldOffset, -m_verticalOffset);
 
     // 在这个被移动过的坐标系里，正常绘制所有游戏对象即可
-    // 1. 绘制雪地
+    // 绘制雪地
     painter.setBrush(Qt::white);
     painter.setPen(Qt::NoPen);
     painter.drawPath(m_snowPath);
 
-    // 2. 绘制玩家
+    // 绘制玩家
     if(m_player) {
         m_player->draw(&painter);
     }
 
-    // --- 新增：绘制所有障碍物 ---
+    // 绘制所有障碍物
     for (Obstacle* obs : m_obstacles) {
         obs->draw(&painter);
     }
@@ -1003,10 +999,8 @@ void GameScreen::paintEvent(QPaintEvent *event)
     for (Signboard* signboard : m_signboards) {
         signboard->draw(&painter);
     }
-    // 3. 在这里绘制未来的企鹅、雪怪等...
-    //   (它们也会被自动正确地放置在滚动的世界中)
 
-    // --- 【新增】绘制所有坐骑 ---
+    // 绘制所有坐骑
     for (Penguin* p : m_penguins) { p->draw(&painter); }
     for (Yeti* y : m_yetis) { y->draw(&painter); }
 
@@ -1014,33 +1008,32 @@ void GameScreen::paintEvent(QPaintEvent *event)
         coin->draw(&painter);
     }
 
-    // --- 【新增】绘制雪崩 ---
+    // 绘制雪崩
     if(m_avalanche) {
         m_avalanche->draw(&painter);
     }
 
-    // 因为 EffectManager 存储的是世界坐标，所以它不需要在滚动的坐标系里绘制
     EffectManager::instance()->draw(&painter);
 
     painter.restore(); // 恢复坐标系，不影响后续的UI绘制
 
 
-    // 【核心修正2】在UI层(不受滚动影响)绘制文字特效
+    // 在UI层(不受滚动影响)绘制文字特效
     EffectManager::instance()->drawTextEffects(&painter);
 
 
-    // 【新增】在所有东西的最上层，绘制UI元素，比如这个警告图片
+    // 在所有东西的最上层，绘制UI元素，比如这个警告图片
     if (m_isWarningVisible && !m_warningPixmap.isNull())
     {
         painter.save(); // 保存当前画笔状态，以免影响其他UI
 
-        QPointF drawPos(50, 50); // 我们把图片画在左上角 (50, 50) 的位置
+        QPointF drawPos(50, 50);
         QPointF center = drawPos + QPointF(m_warningPixmap.width() / 2.0, m_warningPixmap.height() / 2.0);
 
-        // 关键的绘图三连：位移 -> 旋转 -> 缩放
-        painter.translate(center); // 1. 将坐标系原点移动到图片中心
-        painter.rotate(m_warningRotation);  // 2. 绕着新的原点（图片中心）旋转
-        painter.scale(m_warningScale, m_warningScale); // 3. 以图片中心为基准进行缩放
+
+        painter.translate(center); // 将坐标系原点移动到图片中心
+        painter.rotate(m_warningRotation);  // 绕着新的原点（图片中心）旋转
+        painter.scale(m_warningScale, m_warningScale); // 以图片中心为基准进行缩放
 
         // 将坐标系移回去，然后绘制图片
         painter.translate(-center + drawPos);
@@ -1048,22 +1041,13 @@ void GameScreen::paintEvent(QPaintEvent *event)
 
         painter.restore(); // 恢复画笔状态
     }
-    // --- 在这里可以绘制固定的UI元素，如分数、生命值等 ---
-    // painter.drawText(20, 40, "Score: ...");
-
-    // Q_UNUSED(event);
-    // QPainter painter(this);
-    // painter.setRenderHint(QPainter::Antialiasing); // 开启抗锯齿，让曲线更平滑
 
 
 }
 
-// --- 新增：放置障碍物的实现 ---
+// 放置障碍物的实现
 void GameScreen::setupObstacles()
 {
-
-
-
 
     // 定义要生成的区域范围
     const qreal placementStart = m_lastObstacleX;
@@ -1077,7 +1061,7 @@ void GameScreen::setupObstacles()
         QPointF terrainPos = getTerrainInfoAt(randomX).first;
         double choice = QRandomGenerator::global()->generateDouble();
 
-        // 【已修复】使用正确的概率进行判断
+        // 使用正确的概率进行判断
         if (choice < 0.10) { // 10% 概率放置房屋
             House* house = new House(this);
             house->setPosition(terrainPos);
@@ -1145,7 +1129,7 @@ void GameScreen::setupMounts()
     }
 }
 
-// --- 【最终修正版】碰撞检测实现 (无 GOTO) ---
+// 碰撞检测实现
 void GameScreen::checkCollisions()
 {
     if (!m_player) return;
@@ -1153,12 +1137,12 @@ void GameScreen::checkCollisions()
     bool isPlayerOnASurface = false;
     bool playerCollisionHandled = false; // 新的布尔标志
     bool playerJustMounted = false;
-    // 【核心修复】只有在玩家不处于摔倒或站立状态时，才进行坐骑碰撞检测
+    // 只有在玩家不处于摔倒或站立状态时，才进行坐骑碰撞检测
     if (m_player->currentState != Player::Crashing && m_player->currentState != Player::StandingUp)
     {
-        // --- 阶段零：玩家与坐骑的碰撞（安全删除模式 + 优先级判断）---
+        // 玩家与坐骑的碰撞
 
-        // 1. 优先检测与雪怪的碰撞 (最高优先级)
+        // 优先检测与雪怪的碰撞 (最高优先级)
         if (m_player->currentMountType() <= Player::Yeti)
         {
             for (auto it = m_yetis.begin(); it != m_yetis.end(); ++it)
@@ -1177,7 +1161,7 @@ void GameScreen::checkCollisions()
             }
         }
 
-        // 2. 如果没有骑上雪怪，再检测与企鹅的碰撞
+        // 如果没有骑上雪怪，再检测与企鹅的碰撞
         if (!playerJustMounted && m_player->currentMountType() <= Player::Penguin)
         {
             for (auto it = m_penguins.begin(); it != m_penguins.end(); ++it)
@@ -1198,32 +1182,15 @@ void GameScreen::checkCollisions()
     }
 
 
-    // --- 【重要】如果刚刚骑上坐骑，更新玩家状态并跳过环境碰撞 ---
+    // 如果刚刚骑上坐骑，更新玩家状态并跳过环境碰撞
     if (playerCollisionHandled) {
         isPlayerOnASurface = true;
         //goto end_all_surface_checks;
     }
 
     for (House* house : m_houses) {
-        // // A. 检测天花板碰撞 (从下往上)
-        // QPointF leftCorner = house->getRoofLeftCornerWorldPosition();
-        // QPointF rightCorner = house->getRoofRightCornerWorldPosition();
-        // if (m_player->velocity().y() < 0 &&
-        //     m_player->position().x() > leftCorner.x() &&
-        //     m_player->position().x() < rightCorner.x() &&
-        //     m_player->collisionRect().top() < leftCorner.y()) {
 
-        //     // 撞到天花板，硬碰撞
-        //     QPointF playerPos = m_player->position();
-        //     playerPos.setY(leftCorner.y() + m_player->collisionRect().height());
-        //     m_player->setPosition(playerPos);
-        //     m_player->setVelocity(QVector2D(m_player->velocity().x(), 0));
-        //     house->shatter(QPointF(m_player->position().x(), leftCorner.y()));
-        //     playerCollisionHandled = true; // 标记已处理
-        //     break; // 跳出房屋循环
-        // }
-
-        // B. 检测屋顶表面碰撞 (从上往下)
+        // 检测屋顶表面碰撞 (从上往下)
         QPainterPath roofPath = house->getRoofPath();
         auto roofInfo = getPathInfoAt(roofPath, m_player->position().x());
         if (roofInfo.first.y() != 0 && fabs(m_player->position().y() - roofInfo.first.y()) < 5.0) {
@@ -1253,7 +1220,7 @@ void GameScreen::checkCollisions()
         }
     }
 
-    // --- 阶段二：如果不在房屋上，再检测与翘板的碰撞 ---
+    // 如果不在房屋上，再检测与翘板的碰撞
     if (!playerCollisionHandled) {
         for (Seesaw* seesaw : m_seesaws) {
             if (seesaw->currentState() == Seesaw::Shattered) continue;
@@ -1262,17 +1229,9 @@ void GameScreen::checkCollisions()
             auto plankInfo = getPathInfoAt(plankPath, m_player->position().x());
             qreal plankY = plankInfo.first.y(); // 先获取翘板表面的Y坐标
 
-            // 【核心修正】使用更稳定的碰撞判断逻辑
-            // 条件1: 玩家在翘板的水平范围内 (plankY != 0)
-            // 条件2: 玩家的脚底在翘板表面或已穿过其表面
-            // 条件3: 玩家正在向下落或水平移动
             if (plankY != 0 && m_player->position().y() >= plankY - 1.0 && m_player->velocity().y() >= 0) {
-
-                // 既然接触了，就触发破碎效果
-
-
                 qreal plankAngle = plankInfo.second;
-                // --- 【核心修改】调用新函数来计算撞击角度 ---
+                // 调用新函数来计算撞击角度
                 // qDebug()<<"速度的矢量为:"<<m_player->velocity();
                 // qDebug()<<"速度的夹角为:"<<m_player->rotation();
                 qreal impactAngle = calculateImpactAngle(m_player->velocity(), plankAngle);
@@ -1310,7 +1269,6 @@ void GameScreen::checkCollisions()
             QPainterPath boardPath = sign->getBoardPath();
             auto boardInfo = getPathInfoAt(boardPath, m_player->position().x());
             if (boardInfo.first.y() != 0 && fabs(m_player->position().y() - boardInfo.first.y()) < 5.0) {
-                // 【完全复刻的逻辑】根据角度判断滑行或摔倒
                 qreal boardAngle = boardInfo.second;
                 qreal impactAngle = calculateImpactAngle(m_player->velocity(), boardAngle);
                 if (fabs(impactAngle) > 60.0) {
@@ -1335,9 +1293,9 @@ void GameScreen::checkCollisions()
             }
         }
     }
-    // --- 【新增】检测所有企鹅的碰撞 ---
+    // 检测所有企鹅的碰撞
     for (Penguin* p : m_penguins) {
-        // A. 检测与地形的碰撞 (与玩家逻辑类似)
+        // 检测与地形的碰撞 (与玩家逻辑类似)
         auto terrainInfo = getTerrainInfoAt(p->position().x());
         if (p->position().y() >= terrainInfo.first.y()) {
             p->onGround = true;
@@ -1350,12 +1308,11 @@ void GameScreen::checkCollisions()
             p->onGround = false;
         }
 
-        // B. 检测与房屋、翘板、告示牌的碰撞 (只阻挡，不改变速度)
-        // 注意：这里不检测石头
+        // 检测与房屋、翘板、告示牌的碰撞 (只阻挡，不改变速度)
         checkObstacleCollisionForMount(p,PENGUIN_INITIAL_SPEED);
     }
 
-    // --- 【新增】检测所有雪怪的碰撞 (逻辑完全相同) ---
+    // 检测所有雪怪的碰撞
     for (Yeti* y : m_yetis) {
         auto terrainInfo = getTerrainInfoAt(y->position().x());
         if (y->position().y() >= terrainInfo.first.y()) {
@@ -1370,7 +1327,7 @@ void GameScreen::checkCollisions()
         checkObstacleCollisionForMount(y,YETI_INITIAL_SPEED);
     }
 
-    // --- 阶段三：如果不在任何障碍物表面上，才检测与雪地的碰撞 ---
+    // 如果不在任何障碍物表面上，才检测与雪地的碰撞
     if (!playerCollisionHandled) {
         auto terrainInfo = getTerrainInfoAt(m_player->position().x());
         qreal terrainY = terrainInfo.first.y();
@@ -1382,9 +1339,6 @@ void GameScreen::checkCollisions()
             m_player->setRotation(terrainInfo.second);
             QVector2D airVelocity = m_player->velocity();
             QVector2D groundDirection(qCos(qDegreesToRadians(terrainInfo.second)), qSin(qDegreesToRadians(terrainInfo.second)));
-            // qreal newSpeed = QVector2D::dotProduct(airVelocity, groundDirection);
-            // if (newSpeed < 0) newSpeed = 0;
-            // m_player->setVelocity(groundDirection * newSpeed);
             m_player->setVelocity(groundDirection * m_player->currentSpeed());
             ///qDebug()<<"雪地上的速度"<<m_player->velocity();
             goto end_all_surface_checks;
@@ -1392,7 +1346,7 @@ void GameScreen::checkCollisions()
     }
 
 end_all_surface_checks:
-    // --- 阶段四：最终更新状态并检测与石头的碰撞 ---
+    // 最终更新状态并检测与石头的碰撞
     m_player->onGround = isPlayerOnASurface;
 
     for (Obstacle* obs : m_obstacles) {
@@ -1407,7 +1361,7 @@ end_all_surface_checks:
         }
     }
 
-    // --- 【新增】阶段五：检测玩家与金币的碰撞 ---
+    // 检测玩家与金币的碰撞
     for (auto it = m_coins.begin(); it != m_coins.end(); ) {
         Coin* coin = *it;
         if (m_player->collisionRect().intersects(coin->collisionRect())) {
@@ -1415,13 +1369,13 @@ end_all_surface_checks:
             AudioManager::instance()->playSoundEffect(SfxType::CoinGet);
 
             qDebug() << "金币被吃掉了！暂停游戏，准备弹窗...";
-            stopGame(); // 2. 暂停游戏 (未来启用)
-            m_cardDialog->generateRandomCards(); // 【修改】调用新的抽卡函数
+            stopGame();
+            m_cardDialog->generateRandomCards(); // 调用新的抽卡函数
             if (m_cardDialog->exec() == QDialog::Accepted) {
 
                 CardData selectedCard = m_cardDialog->getSelectedCardData();
 
-                // --- 【核心修改】直接调用卡片自带的效果函数 ---
+                // 直接调用卡片自带的效果函数
                 if (selectedCard.applyEffect) {
                     selectedCard.applyEffect(this); // 把 this (GameScreen*) 传进去
                 }
@@ -1429,7 +1383,7 @@ end_all_surface_checks:
 
             startGame(); // 继续游戏
 
-            // 4. 从游戏中移除这个金币
+            // 从游戏中移除这个金币
             it = m_coins.erase(it);
             coin->deleteLater();
             return; // 吃到一个金币后，立刻结束本帧的碰撞检测
@@ -1442,21 +1396,17 @@ end_all_surface_checks:
 \
 
 
-// --- 【最终修正版】一个功能强大的、可复用的坐骑碰撞函数 ---
+// 一个功能强大的、可复用的坐骑碰撞函数
 template<typename MountType>
-void GameScreen::checkObstacleCollisionForMount(MountType* mount, qreal initialSpeed) // <-- 【新增】传入初始速度
+void GameScreen::checkObstacleCollisionForMount(MountType* mount, qreal initialSpeed) // <-- 传入初始速度
 {
-    // A. 先假设坐骑在空中
+    // 先假设坐骑在空中
     mount->onGround = false;
     bool mountOnSurface = false;
 
-    // --- B. 检测与障碍物表面的碰撞 (房屋, 翘板等) ---
-    // (为了代码简洁，我们将房屋和翘板的检测合并)
+    // 检测与障碍物表面的碰撞 (房屋, 翘板等)
     QList<QPainterPath> obstaclePaths;
-    //for (House* house : m_houses) { obstaclePaths.append(house->getRoofPath()); }
     for (Seesaw* seesaw : m_seesaws) { obstaclePaths.append(seesaw->getPlankPath()); }
-    // (告示牌的路径也可以在这里加入)
-
     for (const QPainterPath& path : obstaclePaths) {
         auto surfaceInfo = getPathInfoAt(path, mount->position().x());
         if (surfaceInfo.first.y() != 0 && mount->position().y() >= surfaceInfo.first.y() - 1.0 && mount->velocity().y() >= 0) {
@@ -1466,13 +1416,13 @@ void GameScreen::checkObstacleCollisionForMount(MountType* mount, qreal initialS
 
             mount->setPosition(QPointF(mount->position().x(), surfaceInfo.first.y()));
             mount->setRotation(angle);
-            // 【核心修复】速度大小被强制设为初始速度
+            // 速度大小被强制设为初始速度
             mount->setVelocity(dir * initialSpeed);
             goto end_mount_collision_check;
         }
     }
 
-    // --- C. 如果没碰到任何障碍物，再检测与雪地的碰撞 ---
+    // 如果没碰到任何障碍物，再检测与雪地的碰撞
     if (!mountOnSurface) {
         auto terrainInfo = getTerrainInfoAt(mount->position().x());
         if (mount->position().y() >= terrainInfo.first.y() && mount->velocity().y() >= 0) {
@@ -1484,7 +1434,7 @@ void GameScreen::checkObstacleCollisionForMount(MountType* mount, qreal initialS
             qreal angle = terrainInfo.second;
             QVector2D dir(qCos(qDegreesToRadians(angle)), qSin(qDegreesToRadians(angle)));
             mount->setRotation(angle);
-            // 【核心修复】在雪地上时，速度大小也被强制设为初始速度
+            // 在雪地上时，速度大小也被强制设为初始速度
             mount->setVelocity(dir * initialSpeed);
         } else {
             mount->onGround = false;
@@ -1498,26 +1448,23 @@ end_mount_collision_check:;
 
 
 
-// --- 新增：触发器检测的实现 ---
+// 触发器检测的实现
 void GameScreen::checkTriggers()
 {
     if (!m_player) return;
 
     for (House* house : m_houses) {
-        // 定义一个房子的触发区域 (例如，房子左侧的一个矩形区域)
+        // 定义一个房子的触发区域
         QRectF triggerZone = QRectF(house->position().x() - 100, house->position().y() - 200, 100, 200);
 
         // 如果玩家进入了这个区域
         if (triggerZone.contains(m_player->position())) {
             house->openDoor();
         }
-
-        // 未来在这里还可以检测其他物体，如企鹅和雪怪
     }
 }
 
-// --- 【核心新增】实现通用的路径分析函数 ---
-// 这个函数可以分析任何由直线段组成的 QPainterPath
+// 实现通用的路径分析函数
 QPair<QPointF, qreal> GameScreen::getPathInfoAt(const QPainterPath& path, qreal x_pos)
 {
     // 遍历路径中的每一个元素
@@ -1557,7 +1504,7 @@ QPair<QPointF, qreal> GameScreen::getPathInfoAt(const QPainterPath& path, qreal 
     return qMakePair(QPointF(0, 0), 0.0);
 }
 
-// --- 【新增】计算速度与切面夹角的函数实现 ---
+// 计算速度与切面夹角的函数实现
 qreal GameScreen::calculateImpactAngle(const QVector2D& velocity, qreal surfaceAngleDegrees) const
 {
 
@@ -1565,7 +1512,6 @@ qreal GameScreen::calculateImpactAngle(const QVector2D& velocity, qreal surfaceA
     qreal angleDiff = fabs(velocityAngleDegrees - surfaceAngleDegrees);
     // qDebug()<<"角色矢量角度："<<velocityAngleDegrees;
     // qDebug()<<"障碍矢量角度："<<surfaceAngleDegrees;
-    // 3. 将角度差归一化到 0-180 度之间，得到我们需要的“夹角”
     if (angleDiff > 180) {
         angleDiff = 360 - angleDiff;
     }
@@ -1573,7 +1519,7 @@ qreal GameScreen::calculateImpactAngle(const QVector2D& velocity, qreal surfaceA
     return angleDiff;
 }
 
-// --- 【新增】平缓雪地生成函数 (长度约 2160) ---
+// 平缓雪地生成函数 (长度约 2160)
 void GameScreen::generateGentleSlope(QList<QPointF>& points, const QPointF& startPoint)
 {
     const qreal length = 2160; // 宽度 1080 * 2
@@ -1591,12 +1537,12 @@ void GameScreen::generateGentleSlope(QList<QPointF>& points, const QPointF& star
     }
 }
 
-// --- 【新增】陡峭雪地生成函数 (长度 1080) ---
+// 陡峭雪地生成函数 (长度 1080)
 void GameScreen::generateSteepSlope(QList<QPointF>& points, const QPointF& startPoint)
 {
     QPointF currentPoint = startPoint;
 
-    // --- 第一段：平地1 (用于生成翘板) ---
+    // 第一段：平地1 (用于生成翘板)
     const qreal flat1_length = 200;
     const qreal flat1_drop = 20; // 轻微下降
     const int flat1_segments = 10;
@@ -1608,7 +1554,7 @@ void GameScreen::generateSteepSlope(QList<QPointF>& points, const QPointF& start
     }
     currentPoint = points.last(); // 更新当前点
 
-    // --- 第二段：陡坡 (45度) ---
+    // 第二段：陡坡 (45度)
     const qreal steep_length = 680;
     const qreal steep_drop = steep_length * 0.577; // 长度和高度差相等，即为45度
     const int steep_segments = 34;
@@ -1621,7 +1567,7 @@ void GameScreen::generateSteepSlope(QList<QPointF>& points, const QPointF& start
     }
     currentPoint = points.last();
 
-    // --- 第三段：平地2 (用于生成翘板) ---
+    // 第三段：平地2 (用于生成翘板)
     const qreal flat2_length = 200;
     const qreal flat2_drop = 20;
     const int flat2_segments = 10;
@@ -1633,12 +1579,12 @@ void GameScreen::generateSteepSlope(QList<QPointF>& points, const QPointF& start
     }
 }
 
-// --- 【最终优化版】悬崖生成函数 (45度，出口平滑) ---
+// 悬崖生成函数 (45度，出口平滑)
 void GameScreen::generateCliff(QList<QPointF>& points, const QPointF& startPoint)
 {
     QPointF currentPoint = startPoint;
 
-    // --- 第一段：起跳平台 (50px) ---
+    // 第一段：起跳平台 (50px)
     // 这段保持不变，它的出口本身就是平滑的
     const qreal flat1_length = 50;
     const qreal flat1_drop = 5;
@@ -1651,7 +1597,7 @@ void GameScreen::generateCliff(QList<QPointF>& points, const QPointF& startPoint
     }
     currentPoint = points.last();
 
-    // --- 第二段：悬崖陡坡 (440px) ---
+    // 第二段：悬崖陡坡 (440px)
     const qreal cliff_length = 440;
     const qreal cliff_drop = cliff_length * 2.0; // 45度角
     const int cliff_segments = 22;
@@ -1659,7 +1605,7 @@ void GameScreen::generateCliff(QList<QPointF>& points, const QPointF& startPoint
         qreal progress = (qreal)i / cliff_segments;
         qreal x = currentPoint.x() + progress * cliff_length;
 
-        // 【核心修改】使用 3t^2 - 2t^3 的平滑曲线
+        // 使用 3t^2 - 2t^3 的平滑曲线
         // 这条曲线能确保在 progress=0 和 progress=1 时，切线斜率都为0
         // 从而完美地与前后的平地对接
         qreal y_offset = (3 * pow(progress, 2) - 2 * pow(progress, 3)) * cliff_drop;
@@ -1667,7 +1613,7 @@ void GameScreen::generateCliff(QList<QPointF>& points, const QPointF& startPoint
     }
     currentPoint = points.last();
 
-    // --- 第三段：落地平台 (50px) ---
+    // 第三段：落地平台 (50px)
     // 由于第二段的出口现在是平滑的，这段直接连接即可
     const qreal flat2_length = 50;
     const int flat2_segments = 3;
@@ -1677,8 +1623,6 @@ void GameScreen::generateCliff(QList<QPointF>& points, const QPointF& startPoint
     }
 }
 
-
-// 在 src/ui/gamescreen.cpp 的文件末尾
 
 void GameScreen::applyScoreMultiplier(float multiplier, int duration)
 {
@@ -1696,25 +1640,24 @@ void GameScreen::applyScoreMultiplier(float multiplier, int duration)
 }
 
 
-// 在 src/ui/gamescreen.cpp 的文件末尾添加
 
 void GameScreen::showDebugInfo()
 {
-    // 1. 暂停游戏
+    // 暂停游戏
     stopGame();
 
-    // 2. 创建一个模态对话框
+    // 创建一个模态对话框
     m_debugDialog = new QDialog(this);
     m_debugDialog->setWindowTitle("实时调试信息");
     m_debugDialog->setFixedSize(400, 300);
 
-    // 3. 创建用于显示信息的标签
+    // 创建用于显示信息的标签
     QLabel* infoContent = new QLabel(m_debugDialog);
     infoContent->setWordWrap(true);
     infoContent->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     infoContent->setStyleSheet("font-size: 14px; padding: 10px;");
 
-    // 4. 准备要显示的文本内容
+    // 准备要显示的文本内容
     QString debugText;
     if (m_player) {
         QString gravityStr = QString::number(m_player->currentGravity(), 'f', 2);
@@ -1738,15 +1681,15 @@ void GameScreen::showDebugInfo()
 
     infoContent->setText(debugText);
 
-    // 5. 设置对话框布局
+    // 设置对话框布局
     QVBoxLayout* layout = new QVBoxLayout(m_debugDialog);
     layout->addWidget(infoContent);
     m_debugDialog->setLayout(layout);
 
-    // 6. 显示对话框，这会阻塞游戏循环直到对话框被关闭
+    // 显示对话框，这会阻塞游戏循环直到对话框被关闭
     m_debugDialog->exec();
 
-    // 7. 对话框关闭后，清理并继续游戏
+    // 对话框关闭后，清理并继续游戏
     delete m_debugDialog;
     m_debugDialog = nullptr;
     startGame();

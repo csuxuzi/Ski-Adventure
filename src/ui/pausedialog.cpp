@@ -20,13 +20,12 @@ PauseDialog::PauseDialog(QWidget *parent)
 
     // 按下 "继续游戏" 按钮时，也关闭对话框
     connect(m_resumeButton, &QPushButton::clicked, this, &QDialog::accept);
-    // 【新增】按下“退出游戏”按钮时，也关闭对话框
+    // 按下“退出游戏”按钮时，也关闭对话框
     connect(m_exitButton, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 void PauseDialog::setupUI()
 {
-    // 假设您已经准备好了以下图片资源
     m_resumeButton = new ImageButton(":/assets/images/btn_resume.png", this);
     m_restartButton = new ImageButton(":/assets/images/btn_restart.png", this);
     m_exitButton = new ImageButton(":/assets/images/btn_exit.png", this);

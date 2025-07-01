@@ -1,6 +1,6 @@
 #include "game/Mount.h"
 #include <QTimer>
-#include <QPainter> // 需要包含 QPainter
+#include <QPainter>
 
 // 定义动画常量
 const int FADE_STEP_DURATION = 50;
@@ -12,16 +12,16 @@ Mount::Mount(QObject *parent)
     onGround(false),
     m_animationTimer(nullptr),
     m_currentFrameIndex(0),
-    m_disappearState(Intact), // 【新增】初始化状态
-    m_opacity(1.0)          // 【新增】初始化透明度
+    m_disappearState(Intact),
+    m_opacity(1.0)
 {
-    // 【新增】创建并连接用于淡出动画的计时器
+    // 创建并连接用于淡出动画的计时器
     m_fadeTimer = new QTimer(this);
     connect(m_fadeTimer, &QTimer::timeout, this, &Mount::updateFadeOut);
 }
 
 
-// 【新增】触发消失动画的实现
+// 触发消失动画的实现
 void Mount::disappear()
 {
     if (m_disappearState == Intact) {
@@ -31,7 +31,7 @@ void Mount::disappear()
     }
 }
 
-// 【新增】更新淡出效果的槽函数实现
+// 更新淡出效果的槽函数实现
 void Mount::updateFadeOut()
 {
     m_opacity -= OPACITY_STEP;
@@ -44,7 +44,7 @@ void Mount::updateFadeOut()
     }
 }
 
-// 【新增】重写的 draw 函数
+// 重写的 draw 函数
 void Mount::draw(QPainter* painter)
 {
     painter->save();

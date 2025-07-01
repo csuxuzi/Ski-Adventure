@@ -15,7 +15,7 @@ MainMenuScreen::MainMenuScreen(QWidget *parent) : QWidget(parent)
 
     setupUI();
 
-    // 2. 【第二步】现在所有按钮和控件都已经被创建好了，我们再来初始化动画
+    // 现在所有按钮和控件都已经被创建好了，我们再来初始化动画
     m_drawerAnimation = new QPropertyAnimation(m_drawerContainer, "pos", this);
     m_drawerAnimation->setDuration(300);
     m_drawerAnimation->setEasingCurve(QEasingCurve::InOutCubic);
@@ -26,7 +26,7 @@ MainMenuScreen::MainMenuScreen(QWidget *parent) : QWidget(parent)
 
 
 
-    // 3. 【第三步】最后再把所有信号和槽连接起来
+    // 最后再把所有信号和槽连接起来
     connect(m_startButton, &QPushButton::clicked, this, &MainMenuScreen::startAvalancheAnimation);
     connect(m_toggleButton, &QPushButton::clicked, this, &MainMenuScreen::toggleDrawer);
     connect(m_settingsButton, &QPushButton::clicked, this, &MainMenuScreen::settingsClicked);
@@ -40,25 +40,25 @@ MainMenuScreen::MainMenuScreen(QWidget *parent) : QWidget(parent)
 void MainMenuScreen::setupUI()
 {
 
-    // --- 1. 加载所有需要的静态图片 ---
-    m_gameTitlePixmap.load(":/assets/images/game_title.png"); // 【新增】加载标题图片
-    m_housePixmap.load(":/assets/images/house.png");         // 【新增】加载房屋图片
-    // --- 1. 加载所有需要的静态图片 ---
+    // 加载所有需要的静态图片
+    m_gameTitlePixmap.load(":/assets/images/game_title.png"); // 加载标题图片
+    m_housePixmap.load(":/assets/images/house.png");         // 加载房屋图片
+    // 加载所有需要的静态图片
     m_characterPixmap.load(":/assets/images/sleepPlayer.png");
     m_signboardPixmap.load(":/assets/images/leftDoor.png");
-    m_postPixmap.load(":/assets/images/dashBoard.png"); // 假设您的立牌图片名为 post.png
+    m_postPixmap.load(":/assets/images/dashBoard.png");
 
-    // 对图片进行缩放 (如果需要的话)
+    // 对图片进行缩放
     m_characterPixmap = m_characterPixmap.scaled(m_characterPixmap.size() * 1.0, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_signboardPixmap = m_signboardPixmap.scaled(m_signboardPixmap.size() * 0.3, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_postPixmap = m_postPixmap.scaled(m_postPixmap.size() * 0.5, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_gameTitlePixmap = m_gameTitlePixmap.scaled(m_gameTitlePixmap.size() * 0.8, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_housePixmap = m_housePixmap.scaled(m_housePixmap.size() * 0.7, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
-    // --- 1. 创建开始按钮 ---
+    // 创建开始按钮
     m_startButton = new ImageButton(":/assets/images/btn_start.png", this);
     m_startButton->setHoverEnabled(true);
-    // --- 2. 创建抽屉菜单 ---
+    // 创建抽屉菜单
     // 抽屉的容器
     m_drawerContainer = new QWidget(this);
     ///创建用于打开/关闭抽屉的箭头按钮。
@@ -90,14 +90,14 @@ void MainMenuScreen::setupUI()
 
 void MainMenuScreen::toggleDrawer()
 {
-    // 1. 如果动画正在播放，则不做任何事
+    // 如果动画正在播放，则不做任何事
     if (m_drawerAnimation->state() == QAbstractAnimation::Running) {
         return;
     }
 
     m_drawerContainer->setVisible(true);
 
-    // 2. 根据当前状态，设置动画的起始点和终点
+    // 根据当前状态，设置动画的起始点和终点
     int startX, endX;
     QPoint buttonStartPos, buttonEndPos;
     if (m_isDrawerOpen) {
@@ -119,14 +119,14 @@ void MainMenuScreen::toggleDrawer()
     m_drawerAnimation->setStartValue(QPoint(startX, this->height() - m_drawerContainer->height()));
     m_drawerAnimation->setEndValue(QPoint(endX, this->height() - m_drawerContainer->height()));
 
-    // 3. 启动动画
+    // 启动动画
     m_drawerAnimation->start();
 
     m_buttonAnimation->setStartValue(buttonStartPos);
     m_buttonAnimation->setEndValue(buttonEndPos);
     m_buttonAnimation->start();
 
-    // 4. 切换状态
+    // 切换状态
     m_isDrawerOpen = !m_isDrawerOpen;
 }
 
@@ -194,18 +194,18 @@ void MainMenuScreen::paintEvent(QPaintEvent* event)
     // 设置渐变的颜色
     snowGradient.setColorAt(0.0, QColor("#ffffff"));
     snowGradient.setColorAt(1.0, QColor("#082843"));
-    // c. 使用这个渐变来填充矩形
+    // 使用这个渐变来填充矩形
     painter.fillRect(snowRect, snowGradient);
 
 
-    // 绘制角色 (逻辑不变)
+    // 绘制角色
     if (!m_characterPixmap.isNull()) {
         QPointF characterPos((this->width() - m_characterPixmap.width()) / 2.0-30, this->height() - snowHeight - m_characterPixmap.height() - 65);
         painter.drawPixmap(characterPos, m_characterPixmap);
     }
     // 绘制房屋
     if (!m_housePixmap.isNull()) {
-        // --- 在这里调整房屋的位置 ---
+        // 在这里调整房屋的位置
         QPointF housePos((this->width() - m_housePixmap.width()) / 2.0, this->height() - snowHeight - m_housePixmap.height());
         painter.drawPixmap(housePos, m_housePixmap);
     }

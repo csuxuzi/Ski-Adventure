@@ -76,7 +76,6 @@ const CardData& CardSelectionDialog::getSelectedCardData() const
     if (m_selectedCard) {
         return m_selectedCard->getCardData();
     }
-    // 理论上不应该到这里，因为按钮在没选择时是禁用的
     static CardData emptyData;
     return emptyData;
 }
@@ -90,11 +89,10 @@ void CardSelectionDialog::onSubmit()
     }
 }
 
-// 随机生成三张卡片的逻辑（这是一个简单的示例）
 void CardSelectionDialog::generateRandomCards()
 {
-    // 1. 决定这次抽卡的稀有度档次
-    // 简单示例：80%概率普通，15%稀有，5%传说
+    // 决定这次抽卡的稀有度档次
+    // 80%概率普通，15%稀有，5%传说
     CardRarity rarityToDraw = CardRarity::Common;
     int roll = QRandomGenerator::global()->bounded(100);
     if (roll < 5) {
@@ -103,12 +101,12 @@ void CardSelectionDialog::generateRandomCards()
         rarityToDraw = CardRarity::Rare;
     }
 
-    // 2. 从三个类别中，各抽取一张指定稀有度的卡片
+    // 从三个类别中，各抽取一张指定稀有度的卡片
     m_cards[0]->setCardData(CardDatabase::instance().drawCard(CardCategory::Character, rarityToDraw));
     m_cards[1]->setCardData(CardDatabase::instance().drawCard(CardCategory::Score, rarityToDraw));
     m_cards[2]->setCardData(CardDatabase::instance().drawCard(CardCategory::Avalanche, rarityToDraw));
 
-    // 3. 重置UI状态
+    // 重置UI状态
     for (CardWidget* card : m_cards) {
         card->setSelected(false);
     }

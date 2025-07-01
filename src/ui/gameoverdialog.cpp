@@ -18,7 +18,6 @@ GameOverDialog::GameOverDialog(QWidget *parent)
     connect(m_exitButton, &QPushButton::clicked, this, &GameOverDialog::exitClicked);
 }
 
-// --- 【新增】setScore 函数的实现 ---
 void GameOverDialog::setScore(quint64 score)
 {
     if (m_scoreLabel) {
@@ -28,21 +27,21 @@ void GameOverDialog::setScore(quint64 score)
 
 void GameOverDialog::setupUI()
 {
-    // 1. 创建 "游戏失败" 的文本标签
-    m_titleLabel = new QLabel("游戏结束", this); // <-- 【修改】使用成员变量
+    // 创建 "游戏失败" 的文本标签
+    m_titleLabel = new QLabel("游戏结束", this);
     m_titleLabel->setStyleSheet("font-size: 48px; color: white; font-weight: bold;");
 
-    // --- 【新增】创建分数标签 ---
+    // 创建分数标签
     m_scoreLabel = new QLabel("本次得分: 0", this);
     m_scoreLabel->setStyleSheet("font-size: 24px; color: white;");
     m_scoreLabel->setAlignment(Qt::AlignCenter);
 
 
-    // 2. 创建按钮 (这里我们复用暂停菜单的按钮图片作为示例)
+    // 创建按钮
     m_restartButton = new ImageButton(":/assets/images/btn_restart.png", this);
     m_exitButton = new ImageButton(":/assets/images/btn_exit.png", this);
 
-    // 3. 创建水平布局来放置按钮
+    // 创建水平布局来放置按钮
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(20);
     buttonLayout->addStretch(); // 添加弹性空间
@@ -50,12 +49,12 @@ void GameOverDialog::setupUI()
     buttonLayout->addWidget(m_exitButton);
     buttonLayout->addStretch(); // 添加弹性空间
 
-    // 4. 创建垂直主布局
+    // 创建垂直主布局
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
-    mainLayout->setSpacing(20); // <-- 【修改】减小间距
+    mainLayout->setSpacing(20);
     mainLayout->addStretch();
     mainLayout->addWidget(m_titleLabel, 0, Qt::AlignHCenter); // 标题居中
-    mainLayout->addWidget(m_scoreLabel, 0, Qt::AlignHCenter); // 【新增】添加分数标签
+    mainLayout->addWidget(m_scoreLabel, 0, Qt::AlignHCenter); // 添加分数标签
     mainLayout->addLayout(buttonLayout);
     mainLayout->addStretch();
 

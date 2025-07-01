@@ -10,7 +10,7 @@ class QPainter;
 class QTimer;
 
 
-// 【新增】一个专门用于浮动文字的独立类
+// 一个专门用于浮动文字的独立类
 class FloatingTextEffect : public QObject
 {
     Q_OBJECT
@@ -54,19 +54,19 @@ class EffectManager : public QObject
 {
     Q_OBJECT
 public:
-    // 【新增】定义一个清晰的特效类型枚举
+    // 定义一个清晰的特效类型枚举
     enum class EffectType {
         PenguinPoof,
         YetiPoof
         // 未来可以继续添加其他特效类型
     };
 
-    // 【新增】播放浮动分数特效的接口
+    // 播放浮动分数特效的接口
     void playFloatingScoreEffect(int score, const QPointF& position);
 
 
     static EffectManager* instance();
-    // 【修改】核心接口现在接收一个 EffectType
+    // 核心接口现在接收一个 EffectType
     void playEffect(EffectType type, const QPointF& position);
     void update();
     void draw(QPainter* painter);         // 用于绘制世界坐标的图片特效
@@ -75,10 +75,10 @@ public:
 private:
     explicit EffectManager(QObject *parent = nullptr);
     QList<VisualEffect*> m_effects; // 管理所有正在播放的特效
-    // 【修改】使用 QMap 来存储不同类型的特效图片
+    // 使用 QMap 来存储不同类型的特效图片
     QMap<EffectType, QPixmap> m_effectPixmaps;
 
-    // 【新增】一个列表来管理所有浮动的文字
+    // 一个列表来管理所有浮动的文字
     QList<FloatingTextEffect*> m_textEffects;
 };
 

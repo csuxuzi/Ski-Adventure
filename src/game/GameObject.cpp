@@ -12,12 +12,12 @@ void GameObject::draw(QPainter *painter)
 
     painter->save(); // 保存当前坐标系状态
 
-    // 1. 将坐标系原点移动到物体的位置（底部中心）
+    // 将坐标系原点移动到物体的位置（底部中心）
     painter->translate(m_position);
-    // 2. 将坐标系旋转到物体的角度
+    // 将坐标系旋转到物体的角度
     painter->rotate(m_rotation);
 
-    // 3. 绘制图像，图像的左上角需要向上和向左偏移
+    // 绘制图像，图像的左上角需要向上和向左偏移
     QPointF drawPos(-m_pixmap.width() / 2.0, -m_pixmap.height());
     painter->drawPixmap(drawPos, m_pixmap);
 
@@ -42,7 +42,7 @@ QRectF GameObject::collisionRect() const
 void GameObject::setScale(qreal scale)
 {
     if (m_originalPixmap.isNull()) return;
-    // 【核心新增】保存当前的缩放值
+    // 保存当前的缩放值
     m_scale = scale;
     // 基于原始图像进行缩放，避免精度损失
     m_pixmap = m_originalPixmap.scaled(m_originalPixmap.size() * scale,

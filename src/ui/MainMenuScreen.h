@@ -1,6 +1,6 @@
 #ifndef MAINMENUSCREEN_H
 #define MAINMENUSCREEN_H
-#include <QPixmap> // 【新增】包含 QPixmap
+#include <QPixmap>
 #include <QWidget>
 #include <QResizeEvent>
 class QGraphicsView;
@@ -14,7 +14,7 @@ class MainMenuScreen : public QWidget
 
 public:
     explicit MainMenuScreen(QWidget *parent = nullptr);
-    void resetUI(); // <-- 【新增】公开的UI重置函数
+    void resetUI(); // 公开的UI重置函数
 signals:
     void startGameClicked();
     void settingsClicked();
@@ -31,10 +31,7 @@ private:
     void setupUI();
     void startAvalancheAnimation();
 
-    // 场景相关
-    // QGraphicsView* m_view;
-    // QGraphicsScene* m_scene;
-    // --- 【新增】用于存放主界面图片的成员变量 ---
+    // 用于存放主界面图片的成员变量
     QPixmap m_characterPixmap;
     QPixmap m_signboardPixmap;
     QPixmap m_postPixmap;

@@ -1,7 +1,7 @@
 #include "ui/ImageButton.h"
 #include <QBitmap>
 #include "audio/AudioManager.h"
-// 【实现 1】不带缩放的构造函数 (它会调用下面的带缩放的构造函数，并传递默认缩放比例 1.0)
+// 不带缩放的构造函数 (它会调用下面的带缩放的构造函数，并传递默认缩放比例 1.0)
 ImageButton::ImageButton(const QString &imagePath, QWidget *parent)
     : ImageButton(imagePath, 1.0, parent) // C++11 委托构造函数
 {
@@ -13,8 +13,8 @@ ImageButton::ImageButton(const QString &imagePath, qreal scale,QWidget *parent)
 {
     QPixmap originalPixmap(imagePath);
 
-    // 2. 【核心】根据传入的 scale 参数，生成一张缩放后的新图片
-    //    如果 scale 是 1.0, 则图片大小不变
+    // 根据传入的 scale 参数，生成一张缩放后的新图片
+    // 如果 scale 是 1.0, 则图片大小不变
     m_pixmap = originalPixmap.scaled(originalPixmap.size() * scale,
          Qt::KeepAspectRatio,
          Qt::SmoothTransformation);
@@ -26,10 +26,10 @@ ImageButton::ImageButton(const QString &imagePath, qreal scale,QWidget *parent)
     setFixedSize(m_pixmap.size());
     setStyleSheet("QPushButton { border: none; background: transparent; }");
 
-    // 关键：设置遮罩，让按钮的点击区域和图片的不透明区域完全一样
+    // 设置遮罩，让按钮的点击区域和图片的不透明区域完全一样
     setMask(m_pixmap.mask());
 
-    // 【新增】连接点击信号，播放音效
+    // 连接点击信号，播放音效
     connect(this, &QPushButton::clicked, this, []() {
         AudioManager::instance()->playSoundEffect(SfxType::ButtonClick);
     });

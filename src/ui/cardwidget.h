@@ -21,7 +21,6 @@ signals:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
 
-    // --- 【在这里添加下面这行代码】 ---
     void paintEvent(QPaintEvent* event) override;
 
 private:

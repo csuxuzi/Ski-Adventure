@@ -28,7 +28,7 @@ public:
     explicit Stone(StoneSize size, QObject *parent = nullptr);
 
     void update() override;
-    // 【核心】重写基类的draw方法以实现自定义绘制效果
+    // 重写基类的draw方法以实现自定义绘制效果
     void draw(QPainter* painter) override;
 
     // 外部调用的接口，用于触发破碎

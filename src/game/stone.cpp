@@ -11,7 +11,7 @@ const qreal OPACITY_STEP = 0.05;
 Stone::Stone(StoneSize size, QObject *parent)
     : Obstacle(parent), currentState(Intact), m_opacity(1.0)
 {
-    // 1. 根据尺寸加载不同的石头图片
+    // 根据尺寸加载不同的石头图片
     QString imagePath;
     if (size == Large) {
         imagePath = ":/assets/images/stone_large1.png"; // 请替换为大石头的图片路径
@@ -26,12 +26,12 @@ Stone::Stone(StoneSize size, QObject *parent)
 
     setScale(0.5); // 初始化碰撞体积和 m_pixmap
 
-    // 2. 加载破碎后的图片
+    // 加载破碎后的图片
     if (!m_shatteredPixmap.load(":/assets/images/stone_shattered.png")) { // 请替换为您的破碎图片路径
         qWarning() << "Failed to load shattered stone image!";
     }
 
-    // 3. 初始化计时器
+    // 初始化计时器
     m_fadeTimer = new QTimer(this);
     connect(m_fadeTimer, &QTimer::timeout, this, &Stone::fadeOut);
 }
@@ -40,13 +40,11 @@ void Stone::shatter()
 {
     if (currentState == Intact) {
         currentState = FadingOut;
-        // 【新增】播放石头破碎音效
         AudioManager::instance()->playSoundEffect(SfxType::StoneShatter);
         m_fadeTimer->start(FADE_STEP_DURATION); // 启动淡出计时器
     }
 }
 
-// 这个槽函数会被周期性调用
 void Stone::fadeOut()
 {
     m_opacity -= OPACITY_STEP; // 降低透明度
@@ -58,7 +56,7 @@ void Stone::fadeOut()
     }
 }
 
-// 【核心】自定义的绘制函数
+// 自定义的绘制函数
 void Stone::draw(QPainter* painter)
 {
     // 如果石头是完好的，就使用基类的默认绘制方法
@@ -72,8 +70,6 @@ void Stone::draw(QPainter* painter)
         painter->save(); // 保存当前的 painter 状态
         painter->setOpacity(m_opacity); // 设置透明度
 
-        // 在石头原来的位置绘制破碎贴图
-        // 我们需要计算绘制的左上角坐标
         QPointF drawPos = m_position - QPointF(m_shatteredPixmap.width() / 2.0, m_shatteredPixmap.height());
         painter->drawPixmap(drawPos, m_shatteredPixmap);
 
@@ -81,4 +77,4 @@ void Stone::draw(QPainter* painter)
     }
 }
 
-void Stone::update() { /* 无需代码 */ }
+void Stone::update() {  }

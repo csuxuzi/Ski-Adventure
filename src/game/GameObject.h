@@ -15,7 +15,7 @@ class GameObject : public QObject
 public:
     explicit GameObject(QObject *parent = nullptr);
 
-    // --- 核心物理属性 ---
+    // 核心物理属性
     void setPosition(const QPointF& position) { m_position = position; }
     QPointF position() const { return m_position; }
 
@@ -26,15 +26,15 @@ public:
     qreal rotation() const { return m_rotation; }
 
     QRectF collisionRect() const;
-    // --- 新增：设置缩放比例 ---
+    // 设置缩放比例
     void setScale(qreal scale);
-    // 【核心新增】让GameObject能返回自己的缩放比例
+    // 让GameObject能返回自己的缩放比例
     qreal scale() const { return m_scale; }
-    // --- 核心行为 ---
+    // 核心行为
     // 纯虚函数，子类必须实现具体的更新逻辑
     virtual void update() = 0;
 
-    // 【核心】将draw函数声明为虚函数，允许子类重写
+    // 将draw函数声明为虚函数，允许子类重写
     virtual void draw(QPainter* painter);
 
 protected:
@@ -44,7 +44,7 @@ protected:
     QPixmap m_pixmap;        // 图像
     QPixmap m_originalPixmap;     // 原始未经缩放的图像
     QRectF m_collisionRect;  // 碰撞体积
-    // 【核心新增】增加一个成员变量来存储缩放比例
+    // 增加一个成员变量来存储缩放比例
     qreal m_scale;
 };
 
