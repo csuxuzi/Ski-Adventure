@@ -44,6 +44,7 @@ add_executable(SkiAdventure
     src/game/tree.h src/game/tree.cpp
     src/ui/imagedisplaydialog.h src/ui/imagedisplaydialog.cpp
     src/game/carddatabase.h src/game/carddatabase.cpp
+    src/ui/debuginfodialog.h src/ui/debuginfodialog.cpp
 )
 
 

@@ -36,7 +36,7 @@ public:
     ///卡片相关接口
     void applySpeedBonus(float bonus);
     void applyJumpBonus(float bonus);
-
+    static const qreal PLAYER_SPEED_MULTIPLIER_ON_BROKEN_YETI;
 
     // 获取当前速度大小的接口
     qreal currentSpeed() const { return m_currentSpeed; }

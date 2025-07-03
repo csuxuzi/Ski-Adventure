@@ -10,6 +10,9 @@ const int ANIMATION_FRAME_RATE = 50; // 动画帧率，单位：毫秒
 const int CRASH_DURATION_MS = 5000; // 默认摔倒时间 5 秒
 const qreal CRASH_TIME_REDUCTION_MS = 500; // 每次点击减少 0.5 秒
 const int CRASH_LOOP_FRAME_RATE = 250; // 摔倒循环动画的帧率 (250ms)，数字越大越慢
+const qreal Player::PLAYER_SPEED_MULTIPLIER_ON_BROKEN_YETI = 1.4;
+const qreal PLAYER_GRAVITY_ON_BrokenYeti = 0.6;
+
 Player::Player(QObject *parent) : GameObject(parent)
     , m_currentFrameIndex(0),// 初始化新成员
     m_crashStateTimer(new QTimer(this)),
@@ -503,11 +506,14 @@ void Player::crash()
 
     // 处理骑乘状态下的特殊摔倒逻辑
     if (isMounted()) {
+        const int sfxDelay = 102;
         if (m_currentMount == Penguin) {
             // 不再判断坐骑类型，直接发出请求
             EffectManager::instance()->playEffect(EffectManager::EffectType::PenguinPoof, this->position());
             // 如果骑乘的是企鹅，则执行“企鹅消失”逻辑
-            AudioManager::instance()->playSoundEffect(SfxType::PenguinPoof);
+            QTimer::singleShot(sfxDelay, this, []() {
+                AudioManager::instance()->playSoundEffect(SfxType::PenguinPoof);
+            });
             m_currentMount = None;                // 将坐骑状态切回“无”
             m_mountAnimationFrames.clear();       // 清空坐骑的动画帧
             m_currentSpeed = m_baseSpeed;         // 将玩家速度恢复为基础速度
@@ -518,8 +524,10 @@ void Player::crash()
         }
         else if (m_currentMount == Yeti) {
             // 切换为 BrokenYeti 状态，并传递其静态图片作为唯一的“动画帧”
-            rideMount(BrokenYeti, {m_ridingBrokenYetiPixmap}, 16.0, 0.6); // 速度和重力略微降低
-            AudioManager::instance()->playSoundEffect(SfxType::YetiBroke);
+            rideMount(BrokenYeti, {m_ridingBrokenYetiPixmap}, this->baseSpeed() *Player::PLAYER_SPEED_MULTIPLIER_ON_BROKEN_YETI,PLAYER_GRAVITY_ON_BrokenYeti); // 速度和重力略微降低
+            QTimer::singleShot(sfxDelay, this, []() {
+                AudioManager::instance()->playSoundEffect(SfxType::YetiBroke);
+            });
             // 开启短暂无敌
             startInvincibility();
             return; // 同样，直接返回，不执行标准摔倒
@@ -528,7 +536,9 @@ void Player::crash()
             // 不再判断坐骑类型，直接发出请求
             EffectManager::instance()->playEffect(EffectManager::EffectType::YetiPoof, this->position());
             // 损坏的雪怪逻辑（第二条命）：彻底消失
-            AudioManager::instance()->playSoundEffect(SfxType::YetiPoof);
+            QTimer::singleShot(sfxDelay, this, []() {
+                AudioManager::instance()->playSoundEffect(SfxType::YetiPoof);
+            });
             m_currentMount = None;
             m_currentSpeed = m_baseSpeed;
             m_currentGravity = GRAVITY;

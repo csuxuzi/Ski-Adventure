@@ -21,6 +21,7 @@ protected:
 private:
     QPixmap m_pixmap;
     bool m_hoverEnabled = false;
+    QPoint m_originalPos;
 };
 
 #endif // IMAGEBUTTON_H

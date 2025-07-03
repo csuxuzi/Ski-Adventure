@@ -55,7 +55,7 @@ public:
 
     void playContinuousSound(SfxType type);
     void stopContinuousSound(SfxType type);
-
+    void stopAllContinuousSounds();
     // 获取状态和音量的接口
     bool isMusicEnabled() const;
     float getMusicVolume() const;
@@ -74,8 +74,6 @@ private:
     // 这个函数只会在游戏启动时被调用一次
     void loadAllSoundEffects();
     void loadBgmLists();
-    bool isDestructive(SfxType type) const;
-    bool isMountSound(SfxType type) const;
 
     AudioManager& operator=(const AudioManager&) = delete;
 
@@ -92,9 +90,9 @@ private:
     // 使用 QMap 来存储和管理所有的音效
     QMap<SfxType, QSoundEffect*> m_soundEffects;
     // 共享音效冷却计时器
-    QElapsedTimer m_destructiveSfxTimer;
+    QElapsedTimer m_sfxTimer;
     // 冷却时间可以设得很短，例如100毫秒，足以避免同帧播放，又不会让玩家感觉音效丢失
-    const int DESTRUCTIVE_SFX_COOLDOWN_MS = 100;
+    const int SFX_COOLDOWN_MS = 100;
 
     bool m_musicEnabled;
     bool m_sfxEnabled;

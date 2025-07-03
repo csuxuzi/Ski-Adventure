@@ -9,6 +9,7 @@
 #include <QVector3D>
 #include <QVBoxLayout>
 #include<QKeyEvent>
+#include <QHideEvent>
 #include "game/Stone.h"
 #include "game/House.h"
 #include "game/Seesaw.h"
@@ -25,7 +26,7 @@
 #include "fx/EffectManager.h"
 #include "game/Tree.h"
 #include "audio/AudioManager.h"
-
+#include "ui/DebugInfoDialog.h"
 // 定义地形的一些常量，便于调整
 const int TERRAIN_POINT_INTERVAL = 20; // 每个地形点的水平间距
 const int TERRAIN_MIN_Y = 450;         // 地形的最低高度
@@ -127,7 +128,6 @@ GameScreen::GameScreen(QWidget *parent)
     // 创建并连接计时器，用于驱动游戏循环
     m_timer = new QTimer(this);
     connect(m_timer, &QTimer::timeout, this, &GameScreen::updateGame);
-    //connect(m_timer, &QTimer::timeout, this, &GameScreen::updateSnow);
 
     // 初始化地形
     generateInitialTerrain();
@@ -165,6 +165,7 @@ void GameScreen::setupUI()
     // 创建暂停按钮
     m_pauseButton = new ImageButton(":/assets/images/btn_pause.png", this);
     m_pauseButton->move(1200, 20);
+    m_pauseButton->setHoverEnabled(true);
 
     // 创建暂停对话框
     m_pauseDialog = new PauseDialog(this);
@@ -206,6 +207,7 @@ void GameScreen::setupUI()
     // 创建用于打开调试窗口的按钮
     m_debugButton = new ImageButton(":/assets/images/debug-icon.png", 0.23,this);
     m_debugButton->move(1120, 20); // 放置在左上角
+    m_pauseButton->setHoverEnabled(true);
 
     // 将按钮的点击信号连接到 showDebugInfo 槽
     connect(m_debugButton, &QPushButton::clicked, this, &GameScreen::showDebugInfo);
@@ -278,6 +280,10 @@ void GameScreen::restartGame()
     m_terrainPatternQueue.clear();
     qDeleteAll(m_trees);
     m_trees.clear();
+    qDeleteAll(m_penguins);
+    m_penguins.clear();
+    qDeleteAll(m_yetis);
+    m_yetis.clear();
     m_lastTreeX = 0;
 
     m_signboardCount = 0;
@@ -285,6 +291,13 @@ void GameScreen::restartGame()
     m_worldOffset = 0;
     m_verticalOffset = 0;
     m_lastMountX = 0;
+
+    m_lastMountX = 0;
+    m_lastObstacleGenX = 0;
+    m_lastMountGenX = 0;
+    m_lastSignboardGenX = 0;
+    m_signboardCount = 0;
+    m_nextSignboardDistance = 1000;
 
     // 重置分数
     m_score = 0;
@@ -573,6 +586,14 @@ void GameScreen::keyPressEvent(QKeyEvent *event)
         }
 
         switch (event->key()) {
+        case Qt::Key_Escape:
+            onPauseButtonClicked();
+            break;
+
+        // 按下 D 键，切换调试模式的开关
+        case Qt::Key_D:
+            showDebugInfo();
+            break;
         case Qt::Key_Space:
             m_player->jump();
             break;
@@ -1147,6 +1168,7 @@ void GameScreen::checkCollisions()
         {
             for (auto it = m_yetis.begin(); it != m_yetis.end(); ++it)
             {
+                ///通过判断物体的表面轮廓线是否相交来决定是否碰撞
                 if (m_player->collisionRect().intersects((*it)->collisionRect()))
                 {
                     addScore(100);
@@ -1201,6 +1223,7 @@ void GameScreen::checkCollisions()
             if (m_player->position().x() < peakWorldPos.x()) {
                 // 左侧滑行
                 isPlayerOnASurface = true;
+                AudioManager::instance()->playSoundEffect(SfxType::SeesawSlide);
                 QPointF playerPos = m_player->position();
                 playerPos.setY(roofInfo.first.y());
                 m_player->setPosition(playerPos);
@@ -1247,6 +1270,7 @@ void GameScreen::checkCollisions()
                 } else {
                     // 正常滑行
                     isPlayerOnASurface = true;
+                    AudioManager::instance()->playSoundEffect(SfxType::SeesawSlide);
                     QPointF playerPos = m_player->position();
                     playerPos.setY(plankY);
                     m_player->setPosition(playerPos);
@@ -1646,52 +1670,20 @@ void GameScreen::showDebugInfo()
     // 暂停游戏
     stopGame();
 
-    // 创建一个模态对话框
-    m_debugDialog = new QDialog(this);
-    m_debugDialog->setWindowTitle("实时调试信息");
-    m_debugDialog->setFixedSize(400, 300);
+    // 创建并显示美化后的对话框
+    DebugInfoDialog dialog(m_player, m_scoreMultiplier, this);
+    dialog.exec();
 
-    // 创建用于显示信息的标签
-    QLabel* infoContent = new QLabel(m_debugDialog);
-    infoContent->setWordWrap(true);
-    infoContent->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-    infoContent->setStyleSheet("font-size: 14px; padding: 10px;");
-
-    // 准备要显示的文本内容
-    QString debugText;
-    if (m_player) {
-        QString gravityStr = QString::number(m_player->currentGravity(), 'f', 2);
-        QString jumpForceStr = QString::number(m_player->jumpForce(), 'f', 2);
-        QString mountInfoText = "无";
-
-        if(m_player->isMounted()) {
-            mountInfoText = (m_player->currentMountType() == Player::Penguin) ? "企鹅" : "雪怪/损坏的雪怪";
-        }
-
-        debugText += QString("<b>角色状态:</b><br>");
-        debugText += QString("  - 当前坐骑: %1<br>").arg(mountInfoText);
-        debugText += QString("  - 重力加速度: %1<br>").arg(gravityStr);
-        debugText += QString("  - 弹跳力: %1<br><br>").arg(jumpForceStr);
-    }
-
-    debugText += QString("<b>游戏参数:</b><br>");
-    debugText += QString("  - 企鹅速度倍率: x%1<br>").arg(PLAYER_SPEED_MULTIPLIER_ON_PENGUIN);
-    debugText += QString("  - 雪怪速度倍率: x%1<br>").arg(PLAYER_SPEED_MULTIPLIER_ON_YETI);
-    debugText += QString("  - 当前分数倍率: x%1<br>").arg(QString::number(m_scoreMultiplier, 'f', 1));
-
-    infoContent->setText(debugText);
-
-    // 设置对话框布局
-    QVBoxLayout* layout = new QVBoxLayout(m_debugDialog);
-    layout->addWidget(infoContent);
-    m_debugDialog->setLayout(layout);
-
-    // 显示对话框，这会阻塞游戏循环直到对话框被关闭
-    m_debugDialog->exec();
-
-    // 对话框关闭后，清理并继续游戏
-    delete m_debugDialog;
-    m_debugDialog = nullptr;
+    // 对话框关闭后，继续游戏
     startGame();
     this->setFocus(); // 确保焦点回到游戏窗口
+}
+
+void GameScreen::hideEvent(QHideEvent *event)
+{
+    // 调用 AudioManager 来停止所有持续播放的音效
+    AudioManager::instance()->stopAllContinuousSounds();
+
+    // 调用父类的实现，这是良好实践
+    QWidget::hideEvent(event);
 }

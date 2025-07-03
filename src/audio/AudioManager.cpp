@@ -30,7 +30,7 @@ AudioManager::AudioManager(QObject *parent)
     // 连接 BGM 播放器的状态变化信号到我们的处理槽函数
     connect(m_musicPlayer, &QMediaPlayer::mediaStatusChanged, this, &AudioManager::onBgmStatusChanged);
     // 启动冷却计时器
-    m_destructiveSfxTimer.start();
+    m_sfxTimer.start();
 }
 
 AudioManager::~AudioManager() {}
@@ -112,15 +112,6 @@ void AudioManager::loadAllSoundEffects()
 }
 
 
-bool AudioManager::isDestructive(SfxType type) const
-{
-    // 在这里定义哪些音效属于“破坏性”，方便加锁
-    return type == SfxType::StoneShatter ||
-           type == SfxType::HouseShatter ||
-           type == SfxType::SeesawShatter||
-           type == SfxType::PenguinPoof ||
-           type == SfxType::YetiPoof;
-}
 
 void AudioManager::playSoundEffect(SfxType type)
 {
@@ -128,20 +119,14 @@ void AudioManager::playSoundEffect(SfxType type)
         return;
     }
 
-    // 判断音效是否为需要冷却的类型（破坏性 或 坐骑叫声）
-    if (isDestructive(type) || isMountSound(type)) {
-        // 如果是，则检查共享计时器是否已超过冷却时间
-        if (m_destructiveSfxTimer.elapsed() > DESTRUCTIVE_SFX_COOLDOWN_MS) {
-            // 时间足够长，可以播放
-            m_soundEffects[type]->play();
-            // 播放后，立刻重启共享计时器
-            m_destructiveSfxTimer.restart();
-        }
-        // 如果时间不够长，则直接忽略本次播放请求，不做任何事
-    } else {
-        // 如果不是需要冷却的音效（如按钮点击），则不受影响，直接播放
+    // 检查全局音效计时器是否已超过冷却时间
+    if (m_sfxTimer.elapsed() > SFX_COOLDOWN_MS) { // <--- 使用新的常量和计时器
+        // 时间足够长，可以播放
         m_soundEffects[type]->play();
+        // 播放后，立刻重启全局计时器
+        m_sfxTimer.restart();
     }
+    // 如果时间不够长，则直接忽略本次播放请求，不做任何事
 }
 
 
@@ -237,10 +222,11 @@ void AudioManager::stopContinuousSound(SfxType type)
     }
 }
 
-
-bool AudioManager::isMountSound(SfxType type) const
+void AudioManager::stopAllContinuousSounds()
 {
-    // 在这里定义哪些音效属于“坐骑叫声”
-    return type == SfxType::PenguinChirp ||
-           type == SfxType::YetiRoar;
+    // 直接针对已知的、会循环播放的滑行音效进行操作
+    if (m_soundEffects.contains(SfxType::PlayerSlide)) {
+        m_soundEffects[SfxType::PlayerSlide]->stop();
+    }
+    // 如果未来有其他循环音效，也可以在这里添加停止逻辑
 }

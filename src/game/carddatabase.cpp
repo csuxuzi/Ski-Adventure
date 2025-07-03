@@ -38,21 +38,21 @@ void CardDatabase::initializeDatabase()
 
     // 普通
     m_cardPool[CardCategory::Character][CardRarity::Common].append({
-        "CHAR_SPEED_1", "轻快步伐", "永久提升 10.5 基础滑行速度。",
+        "CHAR_SPEED_1", "轻快步伐", "永久提升 1.5 基础滑行速度。",
         CardCategory::Character, CardRarity::Common,
-        [](GameScreen* gs){ gs->getPlayer()->applySpeedBonus(10.5f); } // 直接绑定逻辑
+        [](GameScreen* gs){ gs->getPlayer()->applySpeedBonus(1.5f); } // 直接绑定逻辑
     });
     m_cardPool[CardCategory::Character][CardRarity::Common].append({
-        "CHAR_JUMP_1", "基础跳跃", "永久提升 11.0 跳跃高度。",
+        "CHAR_JUMP_1", "基础跳跃", "永久提升 2.0 跳跃高度。",
         CardCategory::Character, CardRarity::Common,
-        [](GameScreen* gs){ gs->getPlayer()->applyJumpBonus(11.0f); }
+        [](GameScreen* gs){ gs->getPlayer()->applyJumpBonus(2.0f); }
     });
 
     // 稀有
     m_cardPool[CardCategory::Character][CardRarity::Rare].append({
-        "CHAR_SPEED_2", "肾上腺素", "永久提升 11.0 基础滑行速度。",
+        "CHAR_SPEED_2", "肾上腺素", "永久提升 4.0 基础滑行速度。",
         CardCategory::Character, CardRarity::Rare,
-        [](GameScreen* gs){ gs->getPlayer()->applySpeedBonus(11.0f); }
+        [](GameScreen* gs){ gs->getPlayer()->applySpeedBonus(4.0f); }
     });
     m_cardPool[CardCategory::Character][CardRarity::Rare].append({
         "CHAR_INVINCIBILITY_1", "能量护盾", "获得8秒的无敌护盾。",
@@ -62,9 +62,9 @@ void CardDatabase::initializeDatabase()
 
     // 传说
     m_cardPool[CardCategory::Character][CardRarity::Legendary].append({
-        "CHAR_SPEED_3", "风之祝福", "永久提升 22.0 基础滑行速度。",
+        "CHAR_SPEED_3", "风之祝福", "永久提升 8.0 基础滑行速度。",
         CardCategory::Character, CardRarity::Legendary,
-        [](GameScreen* gs){ gs->getPlayer()->applySpeedBonus(22.0f); }
+        [](GameScreen* gs){ gs->getPlayer()->applySpeedBonus(8.0f); }
     });
 
     // 得分相关卡池

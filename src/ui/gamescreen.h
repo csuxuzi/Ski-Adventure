@@ -53,6 +53,7 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     // 声明键盘事件处理函数
     void keyPressEvent(QKeyEvent *event) override;
+    void hideEvent(QHideEvent *event) override;
 private slots:
     void updateGame();
     void updateSnow();
@@ -168,7 +169,6 @@ private:
     CardSelectionDialog* m_cardDialog;
     QLabel* m_infoLabel;          // 用于显示速度和距离的标签
     ImageButton* m_debugButton;    // 用于打开调试窗口的按钮
-    QDialog* m_debugDialog;        // 调试信息对话框
 
 
     QList<Penguin*> m_penguins;

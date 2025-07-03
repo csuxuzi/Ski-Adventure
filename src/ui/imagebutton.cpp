@@ -23,7 +23,7 @@ ImageButton::ImageButton(const QString &imagePath, qreal scale,QWidget *parent)
     // 设置按钮的基本属性
     setIcon(m_pixmap);
     setIconSize(m_pixmap.size());
-    setFixedSize(m_pixmap.size());
+    //setFixedSize(m_pixmap.size());
     setStyleSheet("QPushButton { border: none; background: transparent; }");
 
     // 设置遮罩，让按钮的点击区域和图片的不透明区域完全一样
@@ -51,7 +51,9 @@ void ImageButton::enterEvent(QEnterEvent *event)
 {
     if (m_hoverEnabled) {
         // 鼠标进入时放大图标
-        setIconSize(m_pixmap.size() * 1.1);
+        QSize newSize = m_pixmap.size() * 1.2;
+        //setIconSize(m_pixmap.size() * 2.0);
+        //setFixedSize(newSize);
     }
     QPushButton::enterEvent(event);
 }
@@ -61,6 +63,7 @@ void ImageButton::leaveEvent(QEvent *event)
     if (m_hoverEnabled) {
         // 鼠标离开时恢复原大小
         setIconSize(m_pixmap.size());
+        setFixedSize(m_pixmap.size());
     }
     QPushButton::leaveEvent(event);
 }
