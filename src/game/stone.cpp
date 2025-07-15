@@ -40,7 +40,9 @@ void Stone::shatter()
 {
     if (currentState == Intact) {
         currentState = FadingOut;
-        AudioManager::instance()->playSoundEffect(SfxType::StoneShatter);
+        QTimer::singleShot(310, this, []() {
+            AudioManager::instance()->playSoundEffect(SfxType::StoneShatter);
+        });
         m_fadeTimer->start(FADE_STEP_DURATION); // 启动淡出计时器
     }
 }
